@@ -58,3 +58,20 @@ def get_category(id: int, db: Session = Depends(get_db),
                             detail=f"Category with id {id} not found")
     
     return category
+
+# Delete Category
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_category(id: int, db: Session = Depends(get_db),
+                    current_user: int = Depends(oauth2.get_current_user)):
+    
+    category_query = db.query(category_model.Category).filter(category_model.Category.id == id)
+    category = category_query.first()
+    
+    if not category:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Category with id {id} not found")
+    
+    category_query.delete(synchronize_session=False)
+    db.commit()
+    
+    return None
