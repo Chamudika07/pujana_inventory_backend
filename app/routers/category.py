@@ -33,3 +33,28 @@ def create_category(category: category.CategoryCreate, db: Session = Depends(get
     db.refresh(new_category)
     
     return new_category
+
+
+# Get All Categories
+@router.get("/", response_model=list[category.CategoryOut])
+def get_categories(db: Session = Depends(get_db),
+                   current_user: int = Depends(oauth2.get_current_user)):
+    
+    categories = db.query(category_model.Category).all()
+    
+    return categories
+
+
+
+# Get Category by ID
+@router.get("/{id}", response_model=category.CategoryOut)
+def get_category(id: int, db: Session = Depends(get_db),
+                 current_user: int = Depends(oauth2.get_current_user)):
+    
+    category = db.query(category_model.Category).filter(category_model.Category.id == id).first()
+    
+    if not category:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Category with id {id} not found")
+    
+    return category
