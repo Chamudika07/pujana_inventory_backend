@@ -75,3 +75,31 @@ def delete_category(id: int, db: Session = Depends(get_db),
     db.commit()
     
     return None
+
+
+# Update Category
+@router.put("/{id}", response_model=category.CategoryOut)
+def update_category(id: int, updated_category: category.CategoryCreate, db: Session = Depends(get_db),
+                    current_user: int = Depends(oauth2.get_current_user)):
+    
+    category_query = db.query(category_model.Category).filter(category_model.Category.id == id)
+    category = category_query.first()
+    
+    if not category:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Category with id {id} not found")
+    
+    # check if updated name already exists
+    existing_category = (db.query(
+        category_model.Category)
+            .filter(func.lower(category_model.Category.name) == updated_category.name.lower(),
+                    category_model.Category.id != id).first() )
+
+    if existing_category:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f"Category with name {updated_category.name} already exists")
+    
+    category_query.update(updated_category.dict(), synchronize_session=False)
+    db.commit()
+    
+    return category_query.first()
