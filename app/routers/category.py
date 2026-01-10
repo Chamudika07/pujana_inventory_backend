@@ -4,6 +4,7 @@ from app.models import category as category_model
 from app import  oauth2
 from app.database import get_db
 from app.schemas import category
+from sqlalchemy import func
 
 router = APIRouter(
     prefix="/categories",
@@ -17,9 +18,11 @@ def create_category(category: category.CategoryCreate, db: Session = Depends(get
                     current_user: int = Depends(oauth2.get_current_user)):
     
     # check if category name already exists
-    exiting_category = db.query(category_model.Category).filter(category_model.Category.name == category.name).first()
-    
-    if exiting_category:
+    existing_category = (db.query(
+        category_model.Category)
+            .filter(func.lower(category_model.Category.name) == category.name.lower()).first() )
+
+    if existing_category:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail=f"Category with name {category.name} already exists")
         
