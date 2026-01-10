@@ -2,8 +2,8 @@ from sqlalchemy import TIMESTAMP , Column, Integer, String
 from sqlalchemy.sql.expression import null , text
 from app.models.base import Base
 from app.models.category import Category
-
-
+from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey
 class Item(Base):
     __tablename__ = "items"
 
@@ -11,5 +11,7 @@ class Item(Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     model_number = Column(String, nullable=True)
-    category_id = Column
+    category_id = Column(Integer, ForeignKey("categories.id" , ondelete="CASCADE") ,nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=text('now()'))
+    
+    category = relationship("Category", back_populates="items")
