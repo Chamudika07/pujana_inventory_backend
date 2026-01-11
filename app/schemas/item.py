@@ -7,6 +7,7 @@ class ItemBase(BaseModel):
     name: str
     description: str | None = None
     model_number: str
+    category_id : int
     
 class ItemCreate(ItemBase):
     pass
