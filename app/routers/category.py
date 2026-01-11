@@ -5,6 +5,7 @@ from app import  oauth2
 from app.database import get_db
 from app.schemas import category
 from sqlalchemy import func
+from typing import List
 
 router = APIRouter(
     prefix="/categories",
@@ -36,7 +37,7 @@ def create_category(category: category.CategoryCreate, db: Session = Depends(get
 
 
 # Get All Categories
-@router.get("/", response_model=list[category.CategoryOut])
+@router.get("/", response_model=List[category.CategoryOut])
 def get_categories(db: Session = Depends(get_db),
                    current_user: int = Depends(oauth2.get_current_user)):
     
