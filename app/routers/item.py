@@ -5,6 +5,7 @@ from app import  oauth2
 from app.database import get_db
 from app.schemas import item
 from sqlalchemy import func
+from typing import List
 
 
 router = APIRouter(
@@ -36,7 +37,7 @@ def create_item(item : item.ItemCreate , db: Session = Depends(get_db),
     return new_item
 
 #get all items
-@router.get("/" , response_model = item.ItemOut)
+@router.get("/" , response_model = List[item.ItemOut])
 def get_items(db: Session = Depends(get_db),
                    current_user: int = Depends(oauth2.get_current_user)):
     
