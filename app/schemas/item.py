@@ -7,9 +7,10 @@ class ItemBase(BaseModel):
     name: str
     description: str | None = None
     model_number: str
-    category_id : int
+    
     
 class ItemCreate(ItemBase):
+    category_id : int
     pass
 
 class ItemOut(ItemBase):
@@ -17,8 +18,9 @@ class ItemOut(ItemBase):
     name: str
     description: str | None = None
     model_number: str 
-    category : category.CategoryOut
     created_at: datetime
+    category : category.CategoryOut
+    
 
     class Config:
         from_attributes = True
