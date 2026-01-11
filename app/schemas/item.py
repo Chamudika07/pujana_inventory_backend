@@ -17,7 +17,8 @@ class ItemOut(ItemBase):
     name: str
     description: str | None = None
     model_number: str 
-    category_id: category.CategoryOut
+    category_id: int
+    category : category.CategoryOut
     created_at: datetime
 
     class Config:
