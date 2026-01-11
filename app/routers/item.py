@@ -25,7 +25,7 @@ def create_item(item : item.ItemCreate , db: Session = Depends(get_db),
     
     if existing_item:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                            detail=f"Item with name {item.name} already exists")
+                            detail=f"Item with name {item.model_number} already exists")
         
     new_item = item_model.Item(**item.dict())
     
