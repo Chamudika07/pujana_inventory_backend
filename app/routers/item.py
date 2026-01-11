@@ -34,6 +34,15 @@ def create_item(item : item.ItemCreate , db: Session = Depends(get_db),
     db.refresh(new_item)
     
     return new_item
+
+#get all items
+@router.get("/" , response_model = item.ItemOut)
+def get_items(db: Session = Depends(get_db),
+                   current_user: int = Depends(oauth2.get_current_user)):
+    
+    items = db.query(item_model.Item).all()
+    
+    return items
     
     
     
