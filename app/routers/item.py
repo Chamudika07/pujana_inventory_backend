@@ -44,7 +44,7 @@ def create_item(item : item.ItemCreate , db: Session = Depends(get_db),
 def get_items(db: Session = Depends(get_db),
                    current_user: int = Depends(oauth2.get_current_user)):
     
-    items = db.query(item_model.Item).all()
+    items = db.query(item_model.Item).order_by(item_model.Item.id).all()
     
     return items
 
