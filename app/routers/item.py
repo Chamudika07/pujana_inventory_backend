@@ -58,6 +58,24 @@ def get_item(id: int, db: Session = Depends(get_db),
                             detail=f"item with id {id} not found")
     
     return item
+
+
+# Delete Category
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_item(id: int, db: Session = Depends(get_db),
+                    current_user: int = Depends(oauth2.get_current_user)):
+    
+    item_query = db.query(item_model.Item).filter(item_model.Item.id == id)
+    item = item_query.first()
+    
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"item with id {id} not found")
+    
+    item_query.delete(synchronize_session=False)
+    db.commit()
+    
+    return None
     
     
     
