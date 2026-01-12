@@ -36,6 +36,9 @@ def create_item(item : item.ItemCreate , db: Session = Depends(get_db),
     
     return new_item
 
+
+
+
 #get all items
 @router.get("/" , response_model = List[item.ItemOut])
 def get_items(db: Session = Depends(get_db),
@@ -44,6 +47,9 @@ def get_items(db: Session = Depends(get_db),
     items = db.query(item_model.Item).all()
     
     return items
+
+
+
     
 #get item by id 
 # Get Category by ID
@@ -58,6 +64,8 @@ def get_item(id: int, db: Session = Depends(get_db),
                             detail=f"item with id {id} not found")
     
     return item
+
+
 
 
 # Delete Category
@@ -79,6 +87,33 @@ def delete_item(id: int, db: Session = Depends(get_db),
     
     
     
+    
+# Update Category
+@router.put("/{id}", response_model=item.ItemOut)
+def update_item(id: int, updated_item: item.ItemCreate , db: Session = Depends(get_db),
+                    current_user: int = Depends(oauth2.get_current_user)):
+    
+    item_query = db.query(item_model.Item).filter(item_model.Item.id == id)
+    item = item_query.first()
+    
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"item with id {id} not found")
+    
+    # check if updated model_number already exists
+    existing_category = (db.query(
+        item_model.Item)
+            .filter(func.lower(item_model.Item.model_number) == updated_item.model_number.lower(),
+                    item_model.Item.id != id).first() )
+
+    if existing_category:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f"item with name {updated_item.model_number} already exists")
+    
+    item_query.update(updated_item.dict(), synchronize_session=False)
+    db.commit()
+    
+    return item_query.first()
     
     
     
