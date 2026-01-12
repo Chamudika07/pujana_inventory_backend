@@ -45,7 +45,19 @@ def get_items(db: Session = Depends(get_db),
     
     return items
     
+#get item by id 
+# Get Category by ID
+@router.get("/{id}", response_model=item.ItemOut)
+def get_item(id: int, db: Session = Depends(get_db),
+                 current_user: int = Depends(oauth2.get_current_user)):
     
+    item = db.query(item_model.Item).filter(item_model.Item.id == id).first()
+    
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"item with id {id} not found")
+    
+    return item
     
     
     
