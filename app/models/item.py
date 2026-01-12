@@ -4,6 +4,8 @@ from app.models.base import Base
 from app.models.category import Category
 from sqlalchemy.orm import relationship
 from sqlalchemy import ForeignKey
+
+#creat teble
 class Item(Base):
     __tablename__ = "items"
 
