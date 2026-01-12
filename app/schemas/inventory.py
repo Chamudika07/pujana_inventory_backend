@@ -1,12 +1,12 @@
-from pydantic import BaseModel 
+from pydantic import BaseModel , Field
 from datetime import datetime
 from decimal import Decimal
-
+from typing import Literal , Annotated
 
 class InventoryTransaction(BaseModel):
     item_id : int
-    transaction_type = str
-    quantity : int
+    transaction_type : Literal["buy" , "sell"]
+    quantity : Annotated[int, Field(gt=0)]
     buying_price = Decimal
     selling_price = Decimal
     
