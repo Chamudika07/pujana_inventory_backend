@@ -1,7 +1,7 @@
 from pydantic import BaseModel , Field
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal , Annotated
+from typing import Literal , Annotated , Optional
 
 class InventoryTransaction(BaseModel):
     item_id : int
@@ -11,10 +11,9 @@ class InventoryTransaction(BaseModel):
     selling_price : Decimal
     
 class InventoryTransactionUpdate(InventoryTransaction):
-    item_id : int
-    buying_price : Decimal
-    selling_price : Decimal
-    
+    item_id : Optional[int] = None
+    buying_price : Optional[Decimal] = None
+    selling_price : Optional[Decimal] = None
     
 class InventoryTransactionCreate(InventoryTransaction):
     pass 
