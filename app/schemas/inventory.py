@@ -7,10 +7,10 @@ class InventoryTransaction(BaseModel):
     item_id : int
     transaction_type : Literal["buy" , "sell"]
     quantity : Annotated[int, Field(gt=0)]
-    buying_price = Decimal
-    selling_price = Decimal
+    buying_price : Decimal
+    selling_price : Decimal
     
-
+    
 class InventoryTransactionCreate(InventoryTransaction):
     pass 
 

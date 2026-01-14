@@ -18,4 +18,4 @@ class InventoryTransaction(Base):
     selling_price = Column(Numeric(10, 2) , nullable = False)
     transaction_date = Column(TIMESTAMP , nullable = False , server_default = text('now()')) 
     
-    items = relationship("Item" , back_populates= "inventory_transactions")
+    items = relationship("Item" , back_populates= "inventory_transaction")

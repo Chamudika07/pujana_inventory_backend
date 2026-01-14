@@ -16,5 +16,5 @@ class Item(Base):
     category_id = Column(Integer, ForeignKey("categories.id" , ondelete="CASCADE") ,nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=text('now()'))
     
-    categories = relationship("Category", back_populates = "items")
-    inventory_transactions = relationship("InventoryTransaction" , back_populates = "items" , cascade = "all, delete")
+    category = relationship("Category", back_populates = "items")
+    inventory_transaction = relationship("InventoryTransaction" , back_populates = "items" , cascade = "all, delete")
