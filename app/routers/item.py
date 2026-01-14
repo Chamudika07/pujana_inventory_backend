@@ -96,6 +96,8 @@ def update_item(id: int, updated_item: item.ItemCreate , db: Session = Depends(g
     item_query = db.query(item_model.Item).filter(item_model.Item.id == id)
     item = item_query.first()
     
+    
+    
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"item with id {id} not found")
