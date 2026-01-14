@@ -1,11 +1,14 @@
 from pydantic import BaseModel 
 from datetime import datetime
 from app.schemas import category
+from decimal import Decimal 
 
 
 class ItemBase(BaseModel):
     name: str
     quantity: int
+    buying_price : Decimal
+    selling_price : Decimal
     description: str | None = None
     model_number: str
     

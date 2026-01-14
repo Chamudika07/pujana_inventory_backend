@@ -1,4 +1,4 @@
-from sqlalchemy import TIMESTAMP , Column, Integer, String 
+from sqlalchemy import TIMESTAMP , Column, Integer, String  , Numeric
 from sqlalchemy.sql.expression import null , text
 from app.models.base import Base
 from app.models.category import Category
@@ -12,6 +12,8 @@ class Item(Base):
     id = Column(Integer, primary_key=True , nullable=False)
     name = Column(String, nullable=False)
     quantity = Column(Integer , nullable = False , server_default="0")
+    buying_price = Column(Numeric(10, 2) , nullable = False)
+    selling_price = Column(Numeric(10, 2) , nullable = False)
     description = Column(String, nullable=True)
     model_number = Column(String, nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id" , ondelete="CASCADE") ,nullable=False)
