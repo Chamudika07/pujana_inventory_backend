@@ -21,7 +21,8 @@ def create_inventory(inventory: inventory.InventoryTransactionCreate , db: Sessi
     # Check item exists
     item = (db.query(item_model.Item).filter(item_model.Item.id == inventory.item_id).first())
 
-    if not item:raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
+    if not item:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
             detail = f"Item with id {inventory.item_id} not found")
 
     #  Stock update logic
@@ -43,3 +44,30 @@ def create_inventory(inventory: inventory.InventoryTransactionCreate , db: Sessi
     db.refresh(new_transaction)
 
     return new_transaction
+
+
+@router.put("/{id}" , response_model = inventory.InventoryTransactionOut)
+def update_inventory(id : int , inventory : inventory.InventoryTransactionUpdate , db: Session = Depends(get_db),
+                                            current_user: int = Depends(oauth2.get_current_user), ):
+    #checke if inventory transaction exists
+    existing_transaction = db.query(inventory_model.InventoryTransaction).filter(inventory_model.InventoryTransaction.id == id )
+    
+    if not existing_transaction.first():
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND , 
+                            detail = f"Inventory transaction with id {id} not found")
+        
+    # Check item exists
+    item = (db.query(item_model.Item).filter(item_model.Item.id == inventory.item_id).first()) 
+    
+    if not item:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,
+            detail = f"Item with id {inventory.item_id} not found")
+    
+    # update
+    existing_transaction.update(inventory.dict() , synchronize_session = False)
+    db.commit()
+    return existing_transaction  
+    
+        
+        
+        

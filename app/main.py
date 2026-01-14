@@ -10,7 +10,7 @@ app = FastAPI(title="Inventory System")
 app.include_router(user.router)
 app.include_router(category.router)
 app.include_router(item.router)
-app.include_router(inventory.router)
+
     
 @app.get("/")
 def root():
