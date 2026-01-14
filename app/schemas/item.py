@@ -5,6 +5,7 @@ from app.schemas import category
 
 class ItemBase(BaseModel):
     name: str
+    quantity: int
     description: str | None = None
     model_number: str
     
@@ -15,9 +16,6 @@ class ItemCreate(ItemBase):
 
 class ItemOut(ItemBase):
     id: int
-    name: str
-    description: str | None = None
-    model_number: str 
     created_at: datetime
     category : category.CategoryOut
     

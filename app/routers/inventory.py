@@ -26,15 +26,15 @@ def create_inventory(inventory: inventory.InventoryTransactionCreate , db: Sessi
 
     #  Stock update logic
     if inventory.transaction_type == "buy":
-        new_quantity = inventory_model.quantity + inventory.quantity
+        new_quantity = item_model.Item.quantity + inventory.quantity
 
     elif inventory.transaction_type == "sell":
-        if inventory_model.quantity < inventory.quantity:
+        if item_model.Item.quantity < inventory.quantity:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Not enough stock to sell")
-        new_quantity = inventory_model.quantity - inventory.quantity
+        new_quantity = item_model.Item.quantity - inventory.quantity
 
-    inventory.quantity = new_quantity
+    item.quantity = new_quantity
     # Create inventory transaction
     new_transaction = inventory_model.InventoryTransaction( **inventory.dict())
 
