@@ -11,6 +11,7 @@ class Item(Base):
 
     id = Column(Integer, primary_key=True , nullable=False)
     name = Column(String, nullable=False)
+    quantity = Column(Integer , nullable = False , server_default="0")
     description = Column(String, nullable=True)
     model_number = Column(String, nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id" , ondelete="CASCADE") ,nullable=False)
