@@ -16,6 +16,6 @@ class InventoryTransaction(Base):
     quantity = Column(Integer , nullable = False , server_default="0")
     buying_price = Column(Numeric(10, 2) , nullable = False)
     selling_price = Column(Numeric(10, 2) , nullable = False)
-    transaction_date = Column(TIMESTAMP , nullable = False , server_default = text('now()')) 
+    created_at = Column(TIMESTAMP , nullable = False , server_default = text('now()')) 
     
     items = relationship("Item" , back_populates= "inventory_transaction")
