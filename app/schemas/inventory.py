@@ -10,6 +10,11 @@ class InventoryTransaction(BaseModel):
     buying_price : Decimal
     selling_price : Decimal
     
+class InventoryTransactionUpdate(InventoryTransaction):
+    item_id : int
+    buying_price : Decimal
+    selling_price : Decimal
+    
     
 class InventoryTransactionCreate(InventoryTransaction):
     pass 
