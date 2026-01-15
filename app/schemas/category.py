@@ -9,10 +9,6 @@ class CategoryBase(BaseModel):
 class CategoryCreate(CategoryBase):
     pass
 
-class CategoryUpdate(BaseModel):
-    name : Optional[str] = None
-    description : Optional[str] = None
-
 class CategoryOut(CategoryBase):
     id: int
     name: str
