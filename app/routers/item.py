@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException , status
 from app.models import item as item_model
+from app.models import category as category_model
 from app import  oauth2
 from app.database import get_db
 from app.schemas import item
@@ -27,6 +28,12 @@ def create_item(item : item.ItemCreate , db: Session = Depends(get_db),
     if existing_item:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail=f"Item with name {item.model_number} already exists")
+        
+    existing_category = db.query(category_model.Category).filter(category_model.Category.id == item.category_id).first()
+    
+    if not existing_category:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND ,
+                            detail = f"Category with id {item.category_id} does not exist")
         
     new_item = item_model.Item(**item.dict())
     
