@@ -110,14 +110,11 @@ def update_item(id: int, updated_item: item.ItemCreate , db: Session = Depends(g
                             detail=f"item with id {id} not found")
     
     # check if updated model_number already exists
-    existing_category = (db.query(
-        item_model.Item)
-            .filter(func.lower(item_model.Item.model_number) == updated_item.model_number.lower(),
-                    item_model.Item.id != id).first() )
-
-    if existing_category:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                            detail=f"item with name {updated_item.model_number} already exists")
+    existing_category = db.query(category_model.Category).filter(category_model.Category.id == updated_item.category_id).first()
+    
+    if not existing_category:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND ,
+                            detail = f"Category with id {item.category_id} does not exist")
     
     item_query.update(updated_item.dict(), synchronize_session=False)
     db.commit()
