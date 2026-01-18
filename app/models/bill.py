@@ -12,4 +12,4 @@ class Bill(Base):
     bill_type = Column(String , nullable = False) #buy or Sell
     created_at = Column(TIMESTAMP , server_default = text("now()"))
     
-    transactions = relationship("InventoryTransaction" , back_populates = "bill" , cascade = "all , delete")
+    inventory_transactions = relationship("InventoryTransaction" , back_populates = "bill" , cascade = "all , delete")
