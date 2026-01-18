@@ -6,7 +6,7 @@ from sqlalchemy import func
 from typing import Literal , List
 from app.function.automatic_bill_id_generation import generate_bill_id
 from app.models.bill import Bill
-from app.schemas.bill import billOut 
+from app.schemas.bill import BillOut , BillItemAction
 
 
 router = APIRouter(
@@ -15,7 +15,7 @@ router = APIRouter(
 )
 
 #get all bills
-@router.get("/", response_model = List[billOut])
+@router.get("/", response_model = List[BillOut])
 def get_bills(db : Session = Depends(get_db) , 
               current_user : int = Depends(oauth2.get_current_user)):
     
