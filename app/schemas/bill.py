@@ -12,7 +12,7 @@ class BillItemAction(BaseModel):
     model_number : str
     quantity : int
     
-class billOut(BillBase):
+class BillOut(BillBase):
     pass 
 
     class Config:
