@@ -1,5 +1,6 @@
 from pydantic import BaseModel 
 from datetime import datetime
+from decimal import Decimal
 
 
 class BillBase(BaseModel):
@@ -13,8 +14,10 @@ class BillItemAction(BaseModel):
     quantity : int
     
 class BillItemOut(BillItemAction):
-    pass
-    current_stock : int
+    bill_id : str
+    item_id : int
+    transaction_type : str
+    price : Decimal
     
     class Config:
         from_attributes = True
@@ -24,4 +27,5 @@ class BillOut(BillBase):
 
     class Config:
         from_attributes = True
-    
+ 
+ 
