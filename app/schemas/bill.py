@@ -7,6 +7,11 @@ class BillBase(BaseModel):
     bill_type : str
     created_at : datetime
     
+class BillItemAction(BaseModel):
+    bill_id : str
+    model_number : str
+    quantity : int
+    
 class billOut(BillBase):
     pass 
 
