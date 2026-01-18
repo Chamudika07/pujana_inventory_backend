@@ -12,6 +12,13 @@ class BillItemAction(BaseModel):
     model_number : str
     quantity : int
     
+class BillItemOut(BillItemAction):
+    pass
+    current_stock : int
+    
+    class Config:
+        from_attributes = True
+    
 class BillOut(BillBase):
     pass 
 
