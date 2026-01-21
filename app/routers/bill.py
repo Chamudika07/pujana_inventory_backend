@@ -28,6 +28,43 @@ def get_bills(db : Session = Depends(get_db) ,
 
 
 
+#bill Print API
+@router.get("/{bill_id}" )
+def print_bill(bill_id : str , db : Session = Depends(get_db) ,
+            current_user : int = Depends(oauth2.get_current_user)):
+    
+    bill = db.query(Bill).filter(Bill.bill_id == bill_id).first()
+    
+    if not bill:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND ,
+                            detail = f"Bill with id {bill_id} not found")
+    
+    transaction = bill.inventory_transactions
+    total_amount = 0
+    items = []
+    
+    for t in transaction:
+        total = t.quantity * t.price
+        total_amount += total 
+        
+        items.append({
+            "item" : t.items.name ,
+            "quantity" : t.quantity , 
+            "price" : t.price ,
+             "total" : total
+        })
+        
+    return {
+        "bill_id": bill.bill_id,
+        "bill_type": bill.bill_type,
+        "items": items,
+        "grand_total": total_amount
+    }
+
+
+
+
+
 #start bill Api (buy or sell button click)
 @router.post("/start")
 def start_bill(bill_type : Literal["buy" , "sell"],
@@ -89,4 +126,5 @@ def add_item_to_bill(data : BillItemAction , db : Session = Depends(get_db) ,
     
     return transaction
          
-
+    
+        
