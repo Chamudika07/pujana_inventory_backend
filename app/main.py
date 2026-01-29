@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from app.models import user as models
 from app.database import engine
-from app.routers import user , category , item , inventory , bill , bill_print
+from app.routers import user , category , item ,   bill , bill_print
 
 app = FastAPI(title="Inventory System")
 
