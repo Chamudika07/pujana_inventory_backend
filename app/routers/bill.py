@@ -29,7 +29,7 @@ def get_bills(db : Session = Depends(get_db) ,
 
 
 #bill Print API
-@router.get("/{bill_id}" , response_model=StartBillResponse)
+@router.get("/{bill_id}" )
 def print_bill(bill_id : str , db : Session = Depends(get_db) ,
             current_user : int = Depends(oauth2.get_current_user)):
     
@@ -66,7 +66,7 @@ def print_bill(bill_id : str , db : Session = Depends(get_db) ,
 
 
 #start bill Api (buy or sell button click)
-@router.post("/start")
+@router.post("/start" , response_model=StartBillResponse)
 def start_bill(bill_type : Literal["buy" , "sell"],
                db : Session = Depends(get_db),
                current_user : int = Depends(oauth2.get_current_user)):
