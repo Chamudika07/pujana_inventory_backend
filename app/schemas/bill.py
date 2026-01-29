@@ -12,7 +12,7 @@ class BillItemAction(BaseModel):
     bill_id : str
     model_number : str
     quantity : int
-    
+ #fdfgfgfgf   
 class BillItemOut(BaseModel):
     bill_id : str
     item_id : int
