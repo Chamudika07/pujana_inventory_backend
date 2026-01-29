@@ -46,7 +46,7 @@ def print_bill_pdf( bill_id: str , db: Session = Depends(get_db) , current_user:
 
     pdf.line(50, y - 5, 450, y - 5)
 
-    # 📦 Items
+    #  Items
     pdf.setFont("Helvetica", 10)
     y -= 25
     grand_total = 0
