@@ -1,7 +1,7 @@
 from pydantic import BaseModel 
 from datetime import datetime
 from decimal import Decimal
-
+from typing import Literal 
 
 class BillBase(BaseModel):
     bill_id : str
@@ -27,5 +27,10 @@ class BillOut(BillBase):
 
     class Config:
         from_attributes = True
- 
+
+
+class StartBillResponse(BaseModel):
+    bill_id: str
+    bill_type: Literal["buy", "sell"]
+    message: str
  

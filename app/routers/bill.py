@@ -8,7 +8,7 @@ from app.function.automatic_bill_id_generation import generate_bill_id
 from app.models.bill import Bill 
 from app.models.item import Item
 from app.models.inventory import InventoryTransaction
-from app.schemas.bill import BillOut , BillItemAction , BillItemOut
+from app.schemas.bill import BillOut , BillItemAction , BillItemOut , StartBillResponse
 
 
 router = APIRouter(
@@ -29,7 +29,7 @@ def get_bills(db : Session = Depends(get_db) ,
 
 
 #bill Print API
-@router.get("/{bill_id}" )
+@router.get("/{bill_id}" , response_model=StartBillResponse)
 def print_bill(bill_id : str , db : Session = Depends(get_db) ,
             current_user : int = Depends(oauth2.get_current_user)):
     
@@ -92,6 +92,7 @@ def add_item_to_bill(data : BillItemAction , db : Session = Depends(get_db) ,
                     current_user : int = Depends(oauth2.get_current_user)):
     
     bill = db.query(Bill).filter(Bill.bill_id == data.bill_id).first()
+    
     if not bill:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND , 
                             detail = f"Bill with id {data.bill_id} not found")
