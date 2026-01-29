@@ -66,6 +66,7 @@ def print_bill(bill_id : str , db : Session = Depends(get_db) ,
 
 
 #start bill Api (buy or sell button click)
+#create bill
 @router.post("/start" , response_model=StartBillResponse)
 def start_bill(bill_type : Literal["buy" , "sell"],
                db : Session = Depends(get_db),
@@ -126,6 +127,8 @@ def add_item_to_bill(data : BillItemAction , db : Session = Depends(get_db) ,
     db.refresh(transaction)
     
     return transaction
+
+
          
     
         
