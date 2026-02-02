@@ -21,3 +21,4 @@ class Item(Base):
     
     category = relationship("Category", back_populates = "items")
     inventory_transaction = relationship("InventoryTransaction" , back_populates = "items" , cascade = "all, delete")
+    low_stock_alerts = relationship("LowStockAlert", back_populates="item", cascade="all, delete")

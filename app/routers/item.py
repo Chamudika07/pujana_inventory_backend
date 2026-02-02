@@ -5,6 +5,7 @@ from app.models import category as category_model
 from app import  oauth2
 from app.database import get_db
 from app.schemas import item
+from app.services.alert_service import AlertService
 from sqlalchemy import func
 from typing import List
 
@@ -75,7 +76,7 @@ def get_item(id: int, db: Session = Depends(get_db),
 
 
 
-# Delete Category
+# Delete Item
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_item(id: int, db: Session = Depends(get_db),
                     current_user: int = Depends(oauth2.get_current_user)):
@@ -95,17 +96,17 @@ def delete_item(id: int, db: Session = Depends(get_db),
     
     
     
-# Update Category
+# Update Item
 @router.put("/{id}", response_model=item.ItemOut)
 def update_item(id: int, updated_item: item.ItemCreate , db: Session = Depends(get_db),
                     current_user: int = Depends(oauth2.get_current_user)):
     
     item_query = db.query(item_model.Item).filter(item_model.Item.id == id)
-    item = item_query.first()
+    item_obj = item_query.first()
     
     
     
-    if not item:
+    if not item_obj:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"item with id {id} not found")
     
@@ -114,12 +115,31 @@ def update_item(id: int, updated_item: item.ItemCreate , db: Session = Depends(g
     
     if not existing_category:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND ,
-                            detail = f"Category with id {item.category_id} does not exist")
+                            detail = f"Category with id {item_obj.category_id} does not exist")
     
     item_query.update(updated_item.dict(), synchronize_session=False)
     db.commit()
     
-    return item_query.first()
+    updated_item_obj = item_query.first()
+    
+    # Trigger low stock alert check when quantity is updated
+    if updated_item.quantity != item_obj.quantity:
+        try:
+            # Get current user's alert threshold
+            from app.models.user import User
+            user = db.query(User).filter(User.id == current_user).first()
+            if user:
+                AlertService.check_and_create_alert(
+                    db=db,
+                    item_id=id,
+                    user_id=current_user,
+                    current_quantity=updated_item.quantity,
+                    alert_threshold=user.alert_threshold
+                )
+        except Exception as e:
+            print(f"Error checking low stock alert: {str(e)}")
+    
+    return updated_item_obj
     
     
     
