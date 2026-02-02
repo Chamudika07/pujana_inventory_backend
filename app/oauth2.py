@@ -8,7 +8,7 @@ from fastapi.security import OAuth2PasswordBearer
 from app.config import settings
 from app.schemas.token import TokenData
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")
 
 SECRET_KEY = settings.secret_key
 ALGORITHM = settings.algorithm
@@ -40,4 +40,7 @@ def get_current_user(token: str = Depends(oauth2_scheme) , db: Session = Depends
     token = verify_access_token(token, credentials_exception)
     user = db.query(models.User).filter(models.User.id == token.id).first()
     
-    return user
+    if user is None:
+        raise credentials_exception
+    
+    return user.id
