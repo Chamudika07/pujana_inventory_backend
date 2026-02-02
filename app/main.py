@@ -1,10 +1,20 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.models import user as models
 from app.database import engine
 from app.routers import user , category , item ,   bill , bill_print , alert
 from app.services.scheduler import start_scheduler, stop_scheduler
 
 app = FastAPI(title="Inventory System")
+
+# Add CORS middleware to handle cross-origin requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for development
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods including OPTIONS
+    allow_headers=["*"],  # Allow all headers
+)
 
 # Start scheduler on app startup
 @app.on_event("startup")
