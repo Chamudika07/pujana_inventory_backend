@@ -82,7 +82,7 @@ def start_bill(bill_type : Literal["buy" , "sell"],
     
     return {
         "bill_id" : bill.bill_id ,
-        "bull_type" : bill.bill_type ,
+        "bill_type" : bill.bill_type ,
         "message" : f"{bill_type.upper()} bill started "
     }
     

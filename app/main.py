@@ -10,10 +10,22 @@ app = FastAPI(title="Inventory System")
 # Add CORS middleware to handle cross-origin requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for development
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001", 
+        "http://localhost:3002",
+        "http://localhost:3003",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:3002", 
+        "http://127.0.0.1:3003",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000"
+    ],  # Allow specific origins for better security
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods including OPTIONS
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # Explicitly allow OPTIONS for preflight
+    allow_headers=["*"],  # Allow all headers including Authorization
+    expose_headers=["*"],  # Expose all headers to the client
 )
 
 # Start scheduler on app startup
