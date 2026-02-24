@@ -6,6 +6,7 @@ from app.models.low_stock_alert import LowStockAlert
 from app.models.user import User
 from app.models.item import Item
 from app.services.alert_service import AlertService
+from app.services.notification_service import NotificationService
 from app.schemas.low_stock_alert import (
     LowStockAlertOut,
     AlertStatsOut,
@@ -13,6 +14,10 @@ from app.schemas.low_stock_alert import (
 )
 from typing import List
 from sqlalchemy import func
+from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/alerts",
@@ -103,7 +108,7 @@ def get_alert(
 
 
 # Resolve an alert (mark as fixed)
-@router.put("/{alert_id}/resolve", response_model=LowStockAlertOut)
+@router.patch("/{alert_id}/resolve", response_model=LowStockAlertOut)
 def resolve_alert(
     alert_id: int,
     db: Session = Depends(get_db),
@@ -128,6 +133,31 @@ def resolve_alert(
     db.refresh(alert)
     
     return alert
+
+
+# Delete alert
+@router.delete("/{alert_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_alert(
+    alert_id: int,
+    db: Session = Depends(get_db),
+    current_user: int = Depends(oauth2.get_current_user)
+):
+    """
+    Delete an alert
+    """
+    alert = db.query(LowStockAlert).filter(
+        LowStockAlert.id == alert_id,
+        LowStockAlert.user_id == current_user
+    ).first()
+    
+    if not alert:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Alert not found"
+        )
+    
+    db.delete(alert)
+    db.commit()
 
 
 # Update user notification preferences
@@ -221,12 +251,12 @@ def trigger_low_stock_check(
         items = db.query(Item).filter(Item.quantity < user.alert_threshold).all()
         
         count = 0
-        for item in items:
+        for item_obj in items:
             if AlertService.check_and_create_alert(
                 db=db,
-                item_id=item.id,
+                item_id=item_obj.id,
                 user_id=current_user,
-                current_quantity=item.quantity,
+                current_quantity=item_obj.quantity,
                 alert_threshold=user.alert_threshold
             ):
                 count += 1
@@ -241,4 +271,134 @@ def trigger_low_stock_check(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error triggering check: {str(e)}"
+        )
+
+
+# Test email endpoint
+@router.post("/test-email", response_model=dict)
+def test_email(
+    db: Session = Depends(get_db),
+    current_user: int = Depends(oauth2.get_current_user)
+):
+    """
+    Test email notification - sends a test email to the user's notification email
+    """
+    try:
+        user = db.query(User).filter(User.id == current_user).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        if not user.notification_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Notification email not set. Please set it in your preferences."
+            )
+        
+        logger.info(f"📧 Sending test email to {user.notification_email}")
+        
+        # Get low stock items for this user
+        low_stock_items = db.query(Item).filter(Item.quantity < user.alert_threshold).all()
+        
+        # Create items HTML table
+        items_html = ""
+        if low_stock_items:
+            items_html = """
+            <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <thead>
+                    <tr style="background-color: #f8f9fa;">
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Item Name</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Current Qty</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Alert Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+            """
+            for item in low_stock_items:
+                items_html += f"""
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;">{item.name}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center; color: #e74c3c; font-weight: bold;">{item.quantity}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">{user.alert_threshold}</td>
+                    </tr>
+                """
+            items_html += """
+                </tbody>
+            </table>
+            """
+        else:
+            items_html = """
+            <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 5px;">
+                <p style="color: #155724; margin: 0;">✅ No items are currently low in stock. Great job!</p>
+            </div>
+            """
+        
+        # Create test email
+        subject = "🧪 Test Email - Pujana Inventory System"
+        user_name = user.email.split('@')[0] if user.email else "User"
+        html_body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; background-color: #f4f4f4;">
+                <div style="max-width: 600px; margin: 20px auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+                    <h2 style="color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 10px;">✅ Test Email Successful!</h2>
+                    
+                    <p style="color: #333;">Hi <strong>{user_name}</strong>,</p>
+                    
+                    <p style="color: #666;">This is a test email to verify that email notifications are working correctly in your Pujana Inventory System.</p>
+                    
+                    <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; border-radius: 5px;">
+                        <p style="margin: 5px 0;"><strong>Email Configuration:</strong> ✅ Working</p>
+                        <p style="margin: 5px 0;"><strong>Sent to:</strong> {user.notification_email}</p>
+                        <p style="margin: 5px 0;"><strong>Time:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+                    </div>
+                    
+                    <h4 style="color: #333; margin-top: 25px; margin-bottom: 15px;">📦 Items Low in Stock</h4>
+                    {items_html}
+                    
+                    <p style="color: #666; margin-top: 20px;">You will receive alerts when items fall below your alert threshold of <strong>{user.alert_threshold} units</strong>.</p>
+                    
+                    <p style="color: #999; font-size: 12px; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px;">
+                        Pujana Inventory Management System<br>
+                        This is an automated test email
+                    </p>
+                </div>
+            </body>
+        </html>
+        """
+        
+        # Send test email
+        logger.info(f"📧 Calling NotificationService.send_email...")
+        success = NotificationService.send_email(
+            recipient_email=user.notification_email,
+            subject=subject,
+            html_body=html_body,
+            item_name="Test Email",
+            current_quantity=0
+        )
+        
+        if success:
+            logger.info(f"✅ Test email sent successfully to {user.notification_email}")
+            return {
+                "message": "✅ Test email sent successfully!",
+                "recipient": user.notification_email,
+                "status": "success"
+            }
+        else:
+            logger.error(f"❌ NotificationService returned False")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to send test email. Check the logs for details."
+            )
+    
+    except HTTPException as he:
+        logger.error(f"❌ HTTP Exception: {he.detail}")
+        raise
+    except Exception as e:
+        logger.error(f"❌ Unexpected error in test_email: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error sending test email: {str(e)}"
         )

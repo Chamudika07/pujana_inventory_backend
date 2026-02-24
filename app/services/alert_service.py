@@ -110,7 +110,8 @@ class AlertService:
         user: User,
         item: Item,
         current_quantity: int,
-        alert_threshold: int
+        alert_threshold: int,
+        db: Session = None
     ) -> None:
         """
         Send notifications (Email and/or WhatsApp) to user
@@ -120,9 +121,28 @@ class AlertService:
             item: Item model instance
             current_quantity: Current quantity of item
             alert_threshold: Alert threshold
+            db: Database session (optional)
         """
         try:
             notification_service = NotificationService()
+            
+            # Get additional low stock items
+            additional_items = []
+            if db:
+                from app.models.item import Item as ItemModel
+                low_items = db.query(ItemModel).filter(
+                    ItemModel.quantity < alert_threshold,
+                    ItemModel.id != item.id
+                ).all()
+                
+                additional_items = [
+                    {
+                        'name': low_item.name,
+                        'quantity': low_item.quantity,
+                        'threshold': alert_threshold
+                    }
+                    for low_item in low_items
+                ]
             
             # Prepare email
             if user.notification_email:
@@ -131,7 +151,8 @@ class AlertService:
                     item_name=item.name,
                     current_quantity=current_quantity,
                     threshold=alert_threshold,
-                    user_name=user.email.split("@")[0]
+                    user_name=user.email.split("@")[0],
+                    additional_low_items=additional_items
                 )
                 notification_service.send_email(
                     recipient_email=user.notification_email,

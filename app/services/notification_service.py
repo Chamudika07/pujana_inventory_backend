@@ -9,14 +9,24 @@ import os
 from typing import List, Optional
 import requests
 import logging
+from dotenv import load_dotenv
+
+# Force reload environment variables
+load_dotenv(override=True)
 
 logger = logging.getLogger(__name__)
 
 # Email Configuration (using Gmail - you can change this)
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 EMAIL_SENDER = os.getenv("EMAIL_SENDER", "")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
+
+logger.info(f"📧 Email Configuration Loaded:")
+logger.info(f"   SMTP_SERVER: {SMTP_SERVER}")
+logger.info(f"   SMTP_PORT: {SMTP_PORT}")
+logger.info(f"   EMAIL_SENDER: {EMAIL_SENDER if EMAIL_SENDER else '❌ NOT SET'}")
+logger.info(f"   EMAIL_PASSWORD: {'✅ SET' if EMAIL_PASSWORD else '❌ NOT SET'}")
 
 # Twilio Configuration (for WhatsApp)
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
@@ -49,31 +59,92 @@ class NotificationService:
             bool: True if successful, False otherwise
         """
         try:
-            if not EMAIL_SENDER or not EMAIL_PASSWORD:
-                logger.warning("Email credentials not configured")
+            logger.info("=" * 60)
+            logger.info("🔄 STARTING EMAIL SEND PROCESS")
+            logger.info("=" * 60)
+            
+            # Re-check configuration at send time
+            sender = os.getenv("EMAIL_SENDER", "")
+            password = os.getenv("EMAIL_PASSWORD", "")
+            
+            # Check configuration
+            if not sender:
+                logger.error("❌ EMAIL_SENDER not configured in .env")
+                logger.error("Please set EMAIL_SENDER in your .env file")
                 return False
+            
+            if not password:
+                logger.error("❌ EMAIL_PASSWORD not configured in .env")
+                logger.error("Please set EMAIL_PASSWORD in your .env file")
+                return False
+            
+            if not recipient_email:
+                logger.error("❌ Recipient email is empty")
+                return False
+            
+            logger.info(f"📧 Recipient: {recipient_email}")
+            logger.info(f"📧 Subject: {subject}")
+            logger.info(f"📧 From: {sender}")
+            logger.info(f"📧 SMTP: {SMTP_SERVER}:{SMTP_PORT}")
             
             # Create message
             message = MIMEMultipart("alternative")
             message["Subject"] = subject
-            message["From"] = EMAIL_SENDER
+            message["From"] = sender
             message["To"] = recipient_email
             
             # Attach HTML body
             part = MIMEText(html_body, "html")
             message.attach(part)
             
-            # Send email
-            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-                server.starttls()
-                server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-                server.sendmail(EMAIL_SENDER, recipient_email, message.as_string())
+            logger.info("📝 Message created successfully")
             
-            logger.info(f"✅ Email sent to {recipient_email} for item: {item_name} (qty: {current_quantity})")
+            # Send email
+            logger.info("🔌 Connecting to SMTP server...")
+            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+                logger.info("✅ Connected to SMTP server")
+                
+                logger.info("🔐 Starting TLS...")
+                server.starttls()
+                logger.info("✅ TLS started")
+                
+                logger.info(f"🔑 Logging in with {sender}...")
+                server.login(sender, password)
+                logger.info("✅ Login successful")
+                
+                logger.info(f"📤 Sending email to {recipient_email}...")
+                result = server.sendmail(sender, recipient_email, message.as_string())
+                logger.info(f"✅ Email sent. Server response: {result}")
+            
+            logger.info(f"✅ Email sent successfully!")
+            logger.info(f"   To: {recipient_email}")
+            logger.info(f"   Item: {item_name}")
+            logger.info(f"   Quantity: {current_quantity}")
+            logger.info("=" * 60)
             return True
             
+        except smtplib.SMTPAuthenticationError as e:
+            logger.error("=" * 60)
+            logger.error(f"❌ SMTP Authentication Error")
+            logger.error(f"Error: {str(e)}")
+            logger.error("Possible causes:")
+            logger.error("  1. EMAIL_SENDER is incorrect")
+            logger.error("  2. EMAIL_PASSWORD is incorrect")
+            logger.error("  3. Gmail App Password (not regular password) is required")
+            logger.error("  4. 2FA might be enabled - use App Passwords instead")
+            logger.error("=" * 60)
+            return False
+        except smtplib.SMTPException as e:
+            logger.error("=" * 60)
+            logger.error(f"❌ SMTP Error: {str(e)}")
+            logger.error("=" * 60)
+            return False
         except Exception as e:
-            logger.error(f"❌ Failed to send email to {recipient_email}: {str(e)}")
+            logger.error("=" * 60)
+            logger.error(f"❌ Failed to send email to {recipient_email}")
+            logger.error(f"Exception: {type(e).__name__}")
+            logger.error(f"Error: {str(e)}")
+            logger.error("=" * 60)
             return False
     
     @staticmethod
@@ -96,8 +167,20 @@ class NotificationService:
             bool: True if successful, False otherwise
         """
         try:
-            if not TWILIO_ACCOUNT_SID or not TWILIO_AUTH_TOKEN or not TWILIO_WHATSAPP_NUMBER:
-                logger.warning("Twilio credentials not configured. Skipping WhatsApp.")
+            if not TWILIO_ACCOUNT_SID:
+                logger.warning("⚠️ TWILIO_ACCOUNT_SID not configured. Skipping WhatsApp.")
+                return False
+            
+            if not TWILIO_AUTH_TOKEN:
+                logger.warning("⚠️ TWILIO_AUTH_TOKEN not configured. Skipping WhatsApp.")
+                return False
+            
+            if not TWILIO_WHATSAPP_NUMBER:
+                logger.warning("⚠️ TWILIO_WHATSAPP_NUMBER not configured. Skipping WhatsApp.")
+                return False
+            
+            if not phone_number:
+                logger.warning("⚠️ Phone number is empty. Skipping WhatsApp.")
                 return False
             
             # Format phone number with 'whatsapp:' prefix for Twilio
@@ -113,6 +196,7 @@ class NotificationService:
             }
             
             auth = (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+            logger.info(f"📱 Sending WhatsApp to {phone_number}...")
             response = requests.post(url, data=data, auth=auth)
             
             if response.status_code == 201:
@@ -131,9 +215,39 @@ class NotificationService:
         item_name: str,
         current_quantity: int,
         threshold: int,
-        user_name: str = "Customer"
+        user_name: str = "Customer",
+        additional_low_items: list = None
     ) -> str:
         """Create HTML email template for low stock alert"""
+        
+        # Create table for additional low stock items if provided
+        additional_items_html = ""
+        if additional_low_items:
+            additional_items_html = """
+            <h4 style="color: #333; margin-top: 20px; margin-bottom: 15px;">Other Low Stock Items:</h4>
+            <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <thead>
+                    <tr style="background-color: #f8f9fa;">
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Item Name</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Current Qty</th>
+                        <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Alert Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+            """
+            for item in additional_low_items:
+                additional_items_html += f"""
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;">{item.get('name', 'N/A')}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center; color: #e74c3c; font-weight: bold;">{item.get('quantity', 0)}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">{item.get('threshold', 5)}</td>
+                    </tr>
+                """
+            additional_items_html += """
+                </tbody>
+            </table>
+            """
+        
         html = f"""
         <html>
             <body style="font-family: Arial, sans-serif; background-color: #f4f4f4;">
@@ -150,7 +264,9 @@ class NotificationService:
                         <p style="margin: 5px 0;"><strong>Alert Threshold:</strong> {threshold}</p>
                     </div>
                     
-                    <p style="color: #666; margin-top: 20px;">Please restock this item to avoid stockouts.</p>
+                    {additional_items_html}
+                    
+                    <p style="color: #666; margin-top: 20px;">Please restock these items to avoid stockouts.</p>
                     
                     <p style="color: #999; font-size: 12px; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 15px;">
                         This is an automated alert from your Inventory Management System.<br>
