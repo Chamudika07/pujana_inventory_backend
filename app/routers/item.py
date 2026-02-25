@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, status
+from starlette.responses import FileResponse
 from app.models import item as item_model
 from app.models import category as category_model
 from app.models.user import User
@@ -11,6 +12,7 @@ from app.services.model_number_service import ModelNumberService
 from sqlalchemy import func
 from typing import List
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -230,6 +232,96 @@ def delete_item(
     
     logger.info(f"✅ Item deleted: {id}")
     return None
+
+
+# Get QR code for an item
+@router.get("/{id}/qr-code")
+def get_item_qr_code(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: int = Depends(oauth2.get_current_user)
+):
+    """
+    Get QR code image for an item
+    Returns the QR code image file
+    """
+    try:
+        item_obj = db.query(item_model.Item).filter(item_model.Item.id == id).first()
+        
+        if not item_obj:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Item with id {id} not found"
+            )
+        
+        if not item_obj.qr_code_path or not os.path.exists(item_obj.qr_code_path):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"QR code not found for item {id}"
+            )
+        
+        logger.info(f"✅ Serving QR code for item {id}: {item_obj.model_number}")
+        
+        return FileResponse(
+            path=item_obj.qr_code_path,
+            media_type="image/png",
+            filename=f"{item_obj.model_number}_qr.png"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error retrieving QR code: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving QR code: {str(e)}"
+        )
+
+
+# Get QR code by model number
+@router.get("/qr/{model_number}")
+def get_qr_by_model(
+    model_number: str,
+    db: Session = Depends(get_db),
+    current_user: int = Depends(oauth2.get_current_user)
+):
+    """
+    Get QR code image by model number
+    Example: /items/qr/MDL-2026-00001
+    """
+    try:
+        item_obj = db.query(item_model.Item).filter(
+            item_model.Item.model_number == model_number
+        ).first()
+        
+        if not item_obj:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Item with model number {model_number} not found"
+            )
+        
+        if not item_obj.qr_code_path or not os.path.exists(item_obj.qr_code_path):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"QR code not found for model {model_number}"
+            )
+        
+        logger.info(f"✅ Serving QR code for model: {model_number}")
+        
+        return FileResponse(
+            path=item_obj.qr_code_path,
+            media_type="image/png",
+            filename=f"{model_number}_qr.png"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error retrieving QR code: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving QR code: {str(e)}"
+        )
 
 
 
