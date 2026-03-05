@@ -8,7 +8,7 @@ from app.function.automatic_bill_id_generation import generate_bill_id
 from app.models.bill import Bill 
 from app.models.item import Item
 from app.models.inventory import InventoryTransaction
-from app.schemas.bill import BillOut , BillItemAction , BillItemOut , StartBillResponse
+from app.schemas.bill import BillOut , BillItemAction , BillItemOut , StartBillResponse , BillType
 
 
 router = APIRouter(
@@ -33,7 +33,7 @@ def get_bills(db : Session = Depends(get_db) ,
 def print_bill(bill_id : str , db : Session = Depends(get_db) ,
             current_user : int = Depends(oauth2.get_current_user)):
     
-    bill = db.query(Bill).filter(Bill.bill_id == bill_id).first()
+    bill = db.query(Bill).filter(Bill.bill_code == bill_id).first()
     
     if not bill:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND ,
@@ -55,7 +55,7 @@ def print_bill(bill_id : str , db : Session = Depends(get_db) ,
         })
         
     return {
-        "bill_id": bill.bill_id,
+        "bill_id": bill.bill_code,
         "bill_type": bill.bill_type,
         "items": items,
         "grand_total": total_amount
@@ -68,22 +68,22 @@ def print_bill(bill_id : str , db : Session = Depends(get_db) ,
 #start bill Api (buy or sell button click)
 #create bill
 @router.post("/start" , response_model=StartBillResponse)
-def start_bill(bill_type : Literal["buy" , "sell"],
+def start_bill(bill_type : BillType,
                db : Session = Depends(get_db),
                current_user : int = Depends(oauth2.get_current_user)):
     
     bill_id = generate_bill_id(bill_type)
     
-    bill = Bill(bill_id = bill_id , bill_type = bill_type)
+    bill = Bill(bill_code = bill_id , bill_type = bill_type)
     
     db.add(bill)
     db.commit()
     db.refresh(bill)
     
     return {
-        "bill_id" : bill.bill_id ,
+        "bill_id" : bill.bill_code ,
         "bill_type" : bill.bill_type ,
-        "message" : f"{bill_type.upper()} bill started "
+        "message" : f"{bill_type.value.upper()} bill started "
     }
     
     
@@ -92,7 +92,7 @@ def start_bill(bill_type : Literal["buy" , "sell"],
 def add_item_to_bill(data : BillItemAction , db : Session = Depends(get_db) , 
                     current_user : int = Depends(oauth2.get_current_user)):
     
-    bill = db.query(Bill).filter(Bill.bill_id == data.bill_id).first()
+    bill = db.query(Bill).filter(Bill.bill_code == data.bill_id).first()
     
     if not bill:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND , 
@@ -115,7 +115,7 @@ def add_item_to_bill(data : BillItemAction , db : Session = Depends(get_db) ,
         price = item.selling_price
     
     transaction = InventoryTransaction(
-        bill_id = bill.bill_id ,
+        bill_id = bill.id ,
         item_id = item.id , 
         transaction_type = bill.bill_type ,
         quantity = data.quantity ,

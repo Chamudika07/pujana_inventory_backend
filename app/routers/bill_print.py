@@ -18,7 +18,7 @@ router = APIRouter(
 @router.get("/pdf/{bill_id}")
 def print_bill_pdf( bill_id: str , db: Session = Depends(get_db) , current_user: int = Depends(oauth2.get_current_user)):
     #filter database
-    bill = db.query(Bill).filter(Bill.bill_id == bill_id).first()
+    bill = db.query(Bill).filter(Bill.bill_code == bill_id).first()
 
     
     if not bill:
@@ -33,8 +33,8 @@ def print_bill_pdf( bill_id: str , db: Session = Depends(get_db) , current_user:
     pdf.drawString(50, height - 50, "PUJANA ELECTRICAL")
 
     pdf.setFont("Helvetica", 10)
-    pdf.drawString(50, height - 70, f"Bill ID: {bill.bill_id}")
-    pdf.drawString(50, height - 85, f"Bill Type: {bill.bill_type.upper()}")
+    pdf.drawString(50, height - 70, f"Bill ID: {bill.bill_code}")
+    pdf.drawString(50, height - 85, f"Bill Type: {bill.bill_type.value.upper()}")
 
     # Table Header
     y = height - 130
@@ -80,6 +80,6 @@ def print_bill_pdf( bill_id: str , db: Session = Depends(get_db) , current_user:
         buffer,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f"attachment; filename={bill.bill_id}.pdf"
+            "Content-Disposition": f"attachment; filename={bill.bill_code}.pdf"
         }
     )

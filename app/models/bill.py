@@ -1,15 +1,20 @@
-from sqlalchemy import TIMESTAMP , Column, Integer, String 
+from sqlalchemy import TIMESTAMP , Column, Enum , Integer , String 
 from sqlalchemy.sql.expression import  text
 from app.models.base import Base
 from sqlalchemy.orm import relationship
+import enum
+
+class BillType(str , enum.Enum):
+    buy = "buy"
+    sell = "sell"
 
 
 class Bill(Base):
     __tablename__ = "bills"
     
     id = Column(Integer , primary_key = True , nullable = False)
-    bill_id = Column(String , unique = True , nullable = False , index = True)
-    bill_type = Column(String , nullable = False) #buy or Sell
+    bill_code = Column(String , unique = True , nullable = False , index = True)
+    bill_type = Column(Enum(BillType) , nullable = False) #buy or Sell
     created_at = Column(TIMESTAMP , server_default = text("now()"))
     
-    inventory_transactions = relationship("InventoryTransaction" , back_populates = "bill" , cascade = "all , delete")
+    inventory_transactions = relationship("InventoryTransaction" , back_populates = "bill" , cascade="all, delete")

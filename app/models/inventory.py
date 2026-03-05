@@ -11,7 +11,7 @@ class InventoryTransaction(Base):
     __tablename__ = "inventory_transactions"
     
     id = Column(Integer , primary_key = True , nullable = False)
-    bill_id = Column(String , ForeignKey("bills.bill_id" , ondelete = "CASCADE") , nullable = False)
+    bill_id = Column(Integer , ForeignKey("bills.id" , ondelete = "CASCADE") , nullable = False)
     item_id = Column(Integer , ForeignKey("items.id" , ondelete = "CASCADE" ) , nullable = False)
     transaction_type = Column(String , nullable = False) #buy/sell
     quantity = Column(Integer , nullable = False , server_default="0")
