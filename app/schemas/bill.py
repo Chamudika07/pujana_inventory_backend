@@ -1,7 +1,7 @@
 from pydantic import BaseModel 
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal 
+from typing import Literal , List
 import enum
 
 class BillType(str , enum.Enum):
@@ -28,7 +28,8 @@ class BillItemOut(BaseModel):
         from_attributes = True
     
 class BillOut(BillBase):
-    pass 
+    id : int
+    bill_id : str
 
     class Config:
         from_attributes = True
@@ -38,4 +39,3 @@ class StartBillResponse(BaseModel):
     bill_id: str
     bill_type: Literal["buy", "sell"]
     message: str
- 

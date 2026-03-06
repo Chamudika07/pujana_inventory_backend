@@ -18,3 +18,7 @@ class Bill(Base):
     created_at = Column(TIMESTAMP , server_default = text("now()"))
     
     inventory_transactions = relationship("InventoryTransaction" , back_populates = "bill" , cascade="all, delete")
+
+    @property
+    def bill_id(self):
+        return self.bill_code

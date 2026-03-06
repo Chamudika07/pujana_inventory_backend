@@ -6,7 +6,7 @@ from sqlalchemy import func
 from typing import Literal , List
 from app.function.automatic_bill_id_generation import generate_bill_id
 from app.models.bill import Bill 
-from app.models.item import Item
+from app.models.item import Item 
 from app.models.inventory import InventoryTransaction
 from app.schemas.bill import BillOut , BillItemAction , BillItemOut , StartBillResponse , BillType
 
@@ -24,44 +24,6 @@ def get_bills(db : Session = Depends(get_db) ,
     bills = db.query(Bill).all()
     
     return bills
-
-
-
-
-#bill Print API
-@router.get("/{bill_id}" )
-def print_bill(bill_id : str , db : Session = Depends(get_db) ,
-            current_user : int = Depends(oauth2.get_current_user)):
-    
-    bill = db.query(Bill).filter(Bill.bill_code == bill_id).first()
-    
-    if not bill:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND ,
-                            detail = f"Bill with id {bill_id} not found")
-    
-    transaction = bill.inventory_transactions
-    total_amount = 0
-    items = []
-    
-    for t in transaction:
-        total = t.quantity * t.price
-        total_amount += total 
-        
-        items.append({
-            "item" : t.items.name ,
-            "quantity" : t.quantity , 
-            "price" : t.price ,
-             "total" : total
-        })
-        
-    return {
-        "bill_id": bill.bill_code,
-        "bill_type": bill.bill_type,
-        "items": items,
-        "grand_total": total_amount
-    }
-
-
 
 
 
@@ -126,7 +88,12 @@ def add_item_to_bill(data : BillItemAction , db : Session = Depends(get_db) ,
     db.commit()
     db.refresh(transaction)
     
-    return transaction
+    return {
+        "bill_id": bill.bill_code,
+        "item_id": transaction.item_id,
+        "transaction_type": transaction.transaction_type,
+        "price": transaction.price
+    }
 
 
          
