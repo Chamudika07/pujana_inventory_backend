@@ -38,9 +38,11 @@ def print_bill_pdf( bill_id: str , db: Session = Depends(get_db) , current_user:
     pdf.drawString(50, height - 85, f"Bill Type: {bill.bill_type.value.upper()}")
     if bill.customer:
         pdf.drawString(50, height - 100, f"Customer: {bill.customer.full_name} ({bill.customer.phone_number})")
+    elif bill.supplier:
+        pdf.drawString(50, height - 100, f"Supplier: {bill.supplier.supplier_name} ({bill.supplier.phone_number})")
 
     # Table Header
-    y = height - 145 if bill.customer else height - 130
+    y = height - 145 if bill.customer or bill.supplier else height - 130
     pdf.setFont("Helvetica-Bold", 10)
     pdf.drawString(50, y, "Item")
     pdf.drawString(250, y, "Qty")

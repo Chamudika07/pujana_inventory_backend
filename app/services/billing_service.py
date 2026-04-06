@@ -9,9 +9,11 @@ from app.models.bill import Bill
 from app.models.customer import Customer
 from app.models.inventory import InventoryTransaction
 from app.models.item import Item
+from app.models.supplier import Supplier
 from app.models.user import User
 from app.services.alert_service import AlertService
 from app.services.customer_service import CustomerService
+from app.services.supplier_service import SupplierService
 
 
 class BillingService:
@@ -23,6 +25,7 @@ class BillingService:
         bill_type: str,
         items: Iterable,
         customer_id: int | None = None,
+        supplier_id: int | None = None,
     ) -> Bill:
         if bill_type not in {"buy", "sell"}:
             raise HTTPException(
@@ -46,10 +49,20 @@ class BillingService:
                 )
             customer = CustomerService.ensure_active_customer(CustomerService.get_customer(db, customer_id))
 
+        supplier: Supplier | None = None
+        if supplier_id is not None:
+            if bill_type != "buy":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="supplier_id can only be used with buy bills",
+                )
+            supplier = SupplierService.ensure_active_supplier(SupplierService.get_supplier(db, supplier_id))
+
         bill = Bill(
             bill_code=generate_bill_id(bill_type),
             bill_type=bill_type,
             customer_id=customer.id if customer else None,
+            supplier_id=supplier.id if supplier else None,
         )
         db.add(bill)
         db.flush()

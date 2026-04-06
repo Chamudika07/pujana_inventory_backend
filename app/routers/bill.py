@@ -38,6 +38,7 @@ def create_bill(
             bill_type=payload.bill_type,
             items=payload.items,
             customer_id=payload.customer_id,
+            supplier_id=payload.supplier_id,
         )
     except HTTPException:
         db.rollback()

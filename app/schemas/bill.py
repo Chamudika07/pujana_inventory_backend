@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Literal , List, Optional
 import enum
 from app.schemas.customer import CustomerBasic
+from app.schemas.supplier import SupplierBasic
 
 class BillType(str , enum.Enum):
     buy = "buy"
@@ -14,6 +15,7 @@ class BillBase(BaseModel):
     bill_type : BillType
     created_at : datetime
     customer_id: Optional[int] = None
+    supplier_id: Optional[int] = None
     
 class BillCreateItem(BaseModel):
     model_number: str
@@ -24,6 +26,7 @@ class BillCreateRequest(BaseModel):
     bill_type: Literal["buy", "sell"]
     items: List[BillCreateItem]
     customer_id: Optional[int] = None
+    supplier_id: Optional[int] = None
     
 class BillItemOut(BaseModel):
     bill_id : str
@@ -38,6 +41,7 @@ class BillOut(BillBase):
     id : int
     bill_id : str
     customer: Optional[CustomerBasic] = None
+    supplier: Optional[SupplierBasic] = None
 
     class Config:
         from_attributes = True

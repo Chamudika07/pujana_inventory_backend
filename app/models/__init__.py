@@ -8,4 +8,4 @@ from app.models.inventory import InventoryTransaction
 from app.models.bill import Bill 
 from app.models.low_stock_alert import LowStockAlert
 from app.models.customer import Customer
-
+from app.models.supplier import Supplier

@@ -16,10 +16,12 @@ class Bill(Base):
     bill_code = Column(String , unique = True , nullable = False , index = True)
     bill_type = Column(Enum(BillType) , nullable = False) #buy or Sell
     customer_id = Column(Integer, ForeignKey("customers.id", ondelete="SET NULL"), nullable=True, index=True)
+    supplier_id = Column(Integer, ForeignKey("suppliers.id", ondelete="SET NULL"), nullable=True, index=True)
     created_at = Column(TIMESTAMP , server_default = text("now()"))
     
     inventory_transactions = relationship("InventoryTransaction" , back_populates = "bill" , cascade="all, delete")
     customer = relationship("Customer", back_populates="bills")
+    supplier = relationship("Supplier", back_populates="bills")
 
     @property
     def bill_id(self):
