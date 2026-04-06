@@ -27,7 +27,7 @@ router = APIRouter(
 def create_item(
     item_data: item.ItemCreate,
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """
     Create a new item with auto-generated model number and QR code
@@ -67,16 +67,14 @@ def create_item(
         
         # Check for low stock alert
         try:
-            user = db.query(User).filter(User.id == current_user).first()
-            if user:
-                AlertService.check_and_create_alert(
-                    db=db,
-                    item_id=new_item.id,
-                    user_id=current_user,
-                    current_quantity=new_item.quantity,
-                    alert_threshold=user.alert_threshold
-                )
-                logger.info(f"✅ Alert check completed for new item {new_item.id}")
+            AlertService.check_and_create_alert(
+                db=db,
+                item_id=new_item.id,
+                user_id=current_user.id,
+                current_quantity=new_item.quantity,
+                alert_threshold=current_user.alert_threshold
+            )
+            logger.info(f"✅ Alert check completed for new item {new_item.id}")
         except Exception as e:
             logger.error(f"Error checking low stock alert for new item: {str(e)}")
         
@@ -96,7 +94,7 @@ def create_item(
 @router.get("/", response_model=List[item.ItemOut])
 def get_items(
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """Get all items"""
     items = db.query(item_model.Item).order_by(item_model.Item.id).all()
@@ -104,30 +102,12 @@ def get_items(
 
 
 # --Get item by ID-- #
-@router.get("/{id}", response_model=item.ItemOut)
-def get_item(
-    id: int,
-    db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
-):
-    """Get item by ID"""
-    item_obj = db.query(item_model.Item).filter(item_model.Item.id == id).first()
-    
-    if not item_obj:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Item with id {id} not found"
-        )
-    
-    return item_obj
-
-
 # --Get item by model number-- #
 @router.get("/by-model/{model_number}", response_model=item.ItemOut)
 def get_item_by_model(
     model_number: str,
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """
     Get item by model number
@@ -147,13 +127,32 @@ def get_item_by_model(
     return item_obj
 
 
+# --Get item by ID-- #
+@router.get("/{id}", response_model=item.ItemOut)
+def get_item(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(oauth2.get_current_user)
+):
+    """Get item by ID"""
+    item_obj = db.query(item_model.Item).filter(item_model.Item.id == id).first()
+    
+    if not item_obj:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Item with id {id} not found"
+        )
+    
+    return item_obj
+
+
 # --Update item-- #
 @router.put("/{id}", response_model=item.ItemOut)
 def update_item(
     id: int,
     updated_item: item.ItemUpdate,
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """Update item (model_number cannot be changed)"""
     item_query = db.query(item_model.Item).filter(item_model.Item.id == id)
@@ -186,16 +185,14 @@ def update_item(
     
     # Check for low stock alert
     try:
-        user = db.query(User).filter(User.id == current_user).first()
-        if user:
-            AlertService.check_and_create_alert(
-                db=db,
-                item_id=id,
-                user_id=current_user,
-                current_quantity=updated_item_obj.quantity,
-                alert_threshold=user.alert_threshold
-            )
-            logger.info(f"✅ Alert check completed for updated item {id}")
+        AlertService.check_and_create_alert(
+            db=db,
+            item_id=id,
+            user_id=current_user.id,
+            current_quantity=updated_item_obj.quantity,
+            alert_threshold=current_user.alert_threshold
+        )
+        logger.info(f"✅ Alert check completed for updated item {id}")
     except Exception as e:
         logger.error(f"Error checking low stock alert: {str(e)}")
     
@@ -208,7 +205,7 @@ def update_item(
 def delete_item(
     id: int,
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """Delete item and associated QR code"""
     item_query = db.query(item_model.Item).filter(item_model.Item.id == id)
@@ -239,7 +236,7 @@ def delete_item(
 def get_item_qr_code(
     id: int,
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """
     Get QR code image for an item
@@ -283,7 +280,7 @@ def get_item_qr_code(
 def get_qr_by_model(
     model_number: str,
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """
     Get QR code image by model number
@@ -322,8 +319,6 @@ def get_qr_by_model(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving QR code: {str(e)}"
         )
-
-
 
 
 

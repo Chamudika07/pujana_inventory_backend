@@ -1,4 +1,4 @@
-from pydantic import BaseModel 
+from pydantic import BaseModel, Field 
 from datetime import datetime
 from decimal import Decimal
 from typing import Literal , List
@@ -13,20 +13,14 @@ class BillBase(BaseModel):
     bill_type : BillType
     created_at : datetime
     
-class SellRequest(BaseModel):
-    item_id: int
-    quantity: int
-    price: float
+class BillCreateItem(BaseModel):
+    model_number: str
+    quantity: int = Field(gt=0)
 
-class BuyRequest(BaseModel):
-    item_id: int
-    quantity: int
-    price: float
-    
-class BillItemAction(BaseModel):
-    bill_id : str
-    model_number : str
-    quantity : int
+
+class BillCreateRequest(BaseModel):
+    bill_type: Literal["buy", "sell"]
+    items: List[BillCreateItem]
     
 class BillItemOut(BaseModel):
     bill_id : str
@@ -49,3 +43,7 @@ class StartBillResponse(BaseModel):
     bill_id: str
     bill_type: Literal["buy", "sell"]
     message: str
+
+
+class BillCreateResponse(StartBillResponse):
+    total_items: int

@@ -29,7 +29,7 @@ router = APIRouter(
 @router.get("/", response_model=List[LowStockAlertOut])
 def get_user_alerts(
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user),
+    current_user: User = Depends(oauth2.get_current_user),
     show_resolved: bool = False
 ):
     """
@@ -38,7 +38,7 @@ def get_user_alerts(
     Query Parameters:
     - show_resolved: If True, show resolved alerts as well
     """
-    query = db.query(LowStockAlert).filter(LowStockAlert.user_id == current_user)
+    query = db.query(LowStockAlert).filter(LowStockAlert.user_id == current_user.id)
     
     if not show_resolved:
         query = query.filter(LowStockAlert.is_resolved == False)
@@ -51,22 +51,22 @@ def get_user_alerts(
 @router.get("/stats", response_model=AlertStatsOut)
 def get_alert_stats(
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """
     Get statistics about low stock alerts for current user
     """
     total_alerts = db.query(LowStockAlert).filter(
-        LowStockAlert.user_id == current_user
+        LowStockAlert.user_id == current_user.id
     ).count()
     
     active_alerts = db.query(LowStockAlert).filter(
-        LowStockAlert.user_id == current_user,
+        LowStockAlert.user_id == current_user.id,
         LowStockAlert.is_resolved == False
     ).count()
     
     resolved_alerts = db.query(LowStockAlert).filter(
-        LowStockAlert.user_id == current_user,
+        LowStockAlert.user_id == current_user.id,
         LowStockAlert.is_resolved == True
     ).count()
     
@@ -88,14 +88,14 @@ def get_alert_stats(
 def get_alert(
     alert_id: int,
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """
     Get a specific alert by ID
     """
     alert = db.query(LowStockAlert).filter(
         LowStockAlert.id == alert_id,
-        LowStockAlert.user_id == current_user
+        LowStockAlert.user_id == current_user.id
     ).first()
     
     if not alert:
@@ -112,14 +112,14 @@ def get_alert(
 def resolve_alert(
     alert_id: int,
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """
     Resolve an alert (mark item as restocked)
     """
     alert = db.query(LowStockAlert).filter(
         LowStockAlert.id == alert_id,
-        LowStockAlert.user_id == current_user
+        LowStockAlert.user_id == current_user.id
     ).first()
     
     if not alert:
@@ -140,14 +140,14 @@ def resolve_alert(
 def delete_alert(
     alert_id: int,
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """
     Delete an alert
     """
     alert = db.query(LowStockAlert).filter(
         LowStockAlert.id == alert_id,
-        LowStockAlert.user_id == current_user
+        LowStockAlert.user_id == current_user.id
     ).first()
     
     if not alert:
@@ -165,7 +165,7 @@ def delete_alert(
 def update_preferences(
     preferences: UserPreferencesUpdate,
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """
     Update user notification preferences
@@ -176,13 +176,7 @@ def update_preferences(
     - notification_enabled: Enable/disable notifications
     - alert_threshold: Quantity threshold for alerts (default: 5)
     """
-    user = db.query(User).filter(User.id == current_user).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+    user = current_user
     
     # Update only provided fields
     update_data = preferences.dict(exclude_unset=True)
@@ -207,18 +201,12 @@ def update_preferences(
 @router.get("/preferences/get", response_model=dict)
 def get_preferences(
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """
     Get current user's notification preferences
     """
-    user = db.query(User).filter(User.id == current_user).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+    user = current_user
     
     return {
         "phone_number": user.phone_number,
@@ -232,20 +220,14 @@ def get_preferences(
 @router.post("/trigger-check", response_model=dict)
 def trigger_low_stock_check(
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """
     Manually trigger low stock check for current user
     (Usually this runs automatically daily, but can be triggered manually)
     """
     try:
-        user = db.query(User).filter(User.id == current_user).first()
-        
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
+        user = current_user
         
         # Get all items for this user
         items = db.query(Item).filter(Item.quantity < user.alert_threshold).all()
@@ -255,7 +237,7 @@ def trigger_low_stock_check(
             if AlertService.check_and_create_alert(
                 db=db,
                 item_id=item_obj.id,
-                user_id=current_user,
+                user_id=current_user.id,
                 current_quantity=item_obj.quantity,
                 alert_threshold=user.alert_threshold
             ):
@@ -278,19 +260,13 @@ def trigger_low_stock_check(
 @router.post("/test-email", response_model=dict)
 def test_email(
     db: Session = Depends(get_db),
-    current_user: int = Depends(oauth2.get_current_user)
+    current_user: User = Depends(oauth2.get_current_user)
 ):
     """
     Test email notification - sends a test email to the user's notification email
     """
     try:
-        user = db.query(User).filter(User.id == current_user).first()
-        
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
+        user = current_user
         
         if not user.notification_email:
             raise HTTPException(

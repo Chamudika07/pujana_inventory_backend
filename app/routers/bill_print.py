@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException , status
 from app import  oauth2
 from app.database import get_db
 from app.models.bill import Bill 
+from app.models.user import User
 from fastapi.responses import StreamingResponse
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -16,7 +17,7 @@ router = APIRouter(
 
 # -- print bill as PDF -- #
 @router.get("/pdf/{bill_id}")
-def print_bill_pdf( bill_id: str , db: Session = Depends(get_db) , current_user: int = Depends(oauth2.get_current_user)):
+def print_bill_pdf( bill_id: str , db: Session = Depends(get_db) , current_user: User = Depends(oauth2.get_current_user)):
     #filter database
     bill = db.query(Bill).filter(Bill.bill_code == bill_id).first()
 

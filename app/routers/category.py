@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException , status
 from app.models import category as category_model
+from app.models.user import User
 from app import  oauth2
 from app.database import get_db
 from app.schemas import category
@@ -16,7 +17,7 @@ router = APIRouter(
 #--Create Category--#
 @router.post("/", response_model=category.CategoryOut)
 def create_category(category: category.CategoryCreate, db: Session = Depends(get_db),
-                    current_user: int = Depends(oauth2.get_current_user)):
+                    current_user: User = Depends(oauth2.get_current_user)):
     
     # check if category name already exists
     existing_category = (db.query(
@@ -40,7 +41,7 @@ def create_category(category: category.CategoryCreate, db: Session = Depends(get
 #--Get All Categories--#
 @router.get("/", response_model=List[category.CategoryOut])
 def get_categories(db: Session = Depends(get_db),
-                   current_user: int = Depends(oauth2.get_current_user)):
+                   current_user: User = Depends(oauth2.get_current_user)):
     
     categories = db.query(category_model.Category).all()
     
@@ -51,7 +52,7 @@ def get_categories(db: Session = Depends(get_db),
 #--Get Category by ID--#
 @router.get("/{id}", response_model=category.CategoryOut)
 def get_category(id: int, db: Session = Depends(get_db),
-                 current_user: int = Depends(oauth2.get_current_user)):
+                 current_user: User = Depends(oauth2.get_current_user)):
     
     category = db.query(category_model.Category).filter(category_model.Category.id == id).first()
     
@@ -64,7 +65,7 @@ def get_category(id: int, db: Session = Depends(get_db),
 #--Delete Category--#
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_category(id: int, db: Session = Depends(get_db),
-                    current_user: int = Depends(oauth2.get_current_user)):
+                    current_user: User = Depends(oauth2.get_current_user)):
     
     category_query = db.query(category_model.Category).filter(category_model.Category.id == id)
     category = category_query.first()
@@ -82,7 +83,7 @@ def delete_category(id: int, db: Session = Depends(get_db),
 #--Update Category--#
 @router.put("/{id}", response_model=category.CategoryOut)
 def update_category(id: int, updated_category: category.CategoryCreate, db: Session = Depends(get_db),
-                    current_user: int = Depends(oauth2.get_current_user)):
+                    current_user: User = Depends(oauth2.get_current_user)):
     
     category_query = db.query(category_model.Category).filter(category_model.Category.id == id)
     category = category_query.first()

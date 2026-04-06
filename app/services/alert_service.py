@@ -37,73 +37,84 @@ class AlertService:
             bool: True if alert was created/sent, False otherwise
         """
         try:
-            # Check if quantity is low
             if current_quantity >= alert_threshold:
                 logger.info(f"Item {item_id} quantity is above threshold")
                 return False
-            
-            # Get item and user details
+
             item = db.query(Item).filter(Item.id == item_id).first()
             user = db.query(User).filter(User.id == user_id).first()
-            
+
             if not item or not user:
                 logger.error(f"Item or User not found: item_id={item_id}, user_id={user_id}")
                 return False
-            
-            # Check if notifications are enabled
+
             if not user.notification_enabled:
                 logger.info(f"Notifications disabled for user {user_id}")
                 return False
-            
-            # Check if alert already exists and was sent in last 24 hours
+
             existing_alert = db.query(LowStockAlert).filter(
                 LowStockAlert.item_id == item_id,
                 LowStockAlert.user_id == user_id,
                 LowStockAlert.is_resolved == False
             ).first()
-            
-            if existing_alert:
-                # If alert was sent in last 24 hours, don't send again
-                if existing_alert.last_sent_at:
-                    time_since_last_alert = datetime.utcnow() - existing_alert.last_sent_at
-                    if time_since_last_alert < timedelta(hours=24):
-                        logger.info(f"Alert already sent for item {item_id} in last 24 hours")
-                        return False
-                
-                # Update existing alert
-                existing_alert.quantity_at_alert = current_quantity
-                existing_alert.last_sent_at = datetime.utcnow()
-                existing_alert.next_alert_at = datetime.utcnow() + timedelta(hours=24)
-                db.commit()
-                alert = existing_alert
-            else:
-                # Create new alert
-                alert = LowStockAlert(
-                    item_id=item_id,
-                    user_id=user_id,
-                    quantity_at_alert=current_quantity,
-                    alert_type="BOTH",
-                    last_sent_at=datetime.utcnow(),
-                    next_alert_at=datetime.utcnow() + timedelta(hours=24),
-                    is_resolved=False
-                )
-                db.add(alert)
-                db.commit()
-                db.refresh(alert)
-            
-            # Send notifications
+
+            if existing_alert and existing_alert.last_sent_at:
+                time_since_last_alert = datetime.utcnow() - existing_alert.last_sent_at
+                if time_since_last_alert < timedelta(hours=24):
+                    logger.info(f"Alert already sent for item {item_id} in last 24 hours")
+                    return False
+
+            alert = AlertService.upsert_low_stock_alert(
+                db=db,
+                item_id=item_id,
+                user_id=user_id,
+                current_quantity=current_quantity,
+            )
+
             AlertService.send_alert_notifications(
                 user=user,
                 item=item,
                 current_quantity=current_quantity,
                 alert_threshold=alert_threshold
             )
-            
-            return True
-            
+
+            return alert is not None
         except Exception as e:
             logger.error(f"Error in check_and_create_alert: {str(e)}")
             return False
+
+    @staticmethod
+    def upsert_low_stock_alert(
+        db: Session,
+        item_id: int,
+        user_id: int,
+        current_quantity: int,
+    ) -> LowStockAlert:
+        existing_alert = db.query(LowStockAlert).filter(
+            LowStockAlert.item_id == item_id,
+            LowStockAlert.user_id == user_id,
+            LowStockAlert.is_resolved == False
+        ).first()
+
+        if existing_alert:
+            existing_alert.quantity_at_alert = current_quantity
+            existing_alert.last_sent_at = datetime.utcnow()
+            existing_alert.next_alert_at = datetime.utcnow() + timedelta(hours=24)
+            db.flush()
+            return existing_alert
+
+        alert = LowStockAlert(
+            item_id=item_id,
+            user_id=user_id,
+            quantity_at_alert=current_quantity,
+            alert_type="BOTH",
+            last_sent_at=datetime.utcnow(),
+            next_alert_at=datetime.utcnow() + timedelta(hours=24),
+            is_resolved=False
+        )
+        db.add(alert)
+        db.flush()
+        return alert
     
     @staticmethod
     def send_alert_notifications(
@@ -203,7 +214,7 @@ class AlertService:
             
             if alert:
                 alert.is_resolved = True
-                db.commit()
+                db.flush()
                 logger.info(f"Alert resolved for item {item_id}")
                 return True
             
