@@ -5,10 +5,11 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
-from app.models.bill import Bill
+from app.models.bill import Bill, BillType
 from app.models.customer import Customer
-from app.models.inventory import InventoryTransaction
+from app.models.payment import Payment
 from app.schemas.customer import CustomerCreate, CustomerDetailResponse, CustomerListItem, CustomerSummary, CustomerUpdate
+from app.services.financial_service import FinancialService
 
 
 class CustomerService:
@@ -41,12 +42,13 @@ class CustomerService:
             db.query(
                 Customer.id.label("customer_id"),
                 func.count(func.distinct(Bill.id)).label("number_of_bills"),
-                func.coalesce(func.sum(InventoryTransaction.quantity * InventoryTransaction.price), 0).label("total_purchases"),
+                func.coalesce(func.sum(Bill.total_amount), 0).label("total_purchases"),
+                func.coalesce(func.sum(Bill.paid_amount), 0).label("total_paid"),
                 Customer.due_balance.label("due_balance"),
             )
             .outerjoin(Bill, Bill.customer_id == Customer.id)
-            .outerjoin(InventoryTransaction, InventoryTransaction.bill_id == Bill.id)
             .filter(Customer.id.in_(customer_ids))
+            .filter(or_(Bill.id.is_(None), Bill.bill_type == BillType.sell))
             .group_by(Customer.id)
             .all()
         )
@@ -57,6 +59,7 @@ class CustomerService:
                 number_of_bills=int(row.number_of_bills or 0),
                 total_purchases=Decimal(row.total_purchases or 0),
                 due_balance=Decimal(row.due_balance or 0),
+                total_paid=Decimal(row.total_paid or 0),
             )
         return summary_map
 
@@ -129,6 +132,7 @@ class CustomerService:
     @staticmethod
     def create_customer(db: Session, payload: CustomerCreate) -> Customer:
         customer = Customer(**payload.model_dump())
+        customer.due_balance = FinancialService.money(customer.due_balance)
         db.add(customer)
         db.commit()
         db.refresh(customer)
@@ -138,6 +142,7 @@ class CustomerService:
     def update_customer(db: Session, customer_id: int, payload: CustomerUpdate) -> Customer:
         customer = CustomerService.get_customer(db, customer_id)
         update_data = payload.model_dump(exclude_unset=True)
+        update_data.pop("due_balance", None)
 
         for field, value in update_data.items():
             setattr(customer, field, value)

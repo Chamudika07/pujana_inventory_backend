@@ -7,7 +7,9 @@ from app import oauth2
 from app.database import get_db
 from app.models.user import User
 from app.schemas.customer import CustomerCreate, CustomerDetailResponse, CustomerListItem, CustomerUpdate
+from app.schemas.payment import CustomerDueSummaryResponse, CustomerLedgerResponse
 from app.services.customer_service import CustomerService
+from app.services.payment_service import PaymentService
 
 
 router = APIRouter(
@@ -42,6 +44,24 @@ def get_customer(
     current_user: User = Depends(oauth2.get_current_user),
 ):
     return CustomerService.get_customer_detail(db, id)
+
+
+@router.get("/{id}/ledger", response_model=CustomerLedgerResponse)
+def get_customer_ledger(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(oauth2.get_current_user),
+):
+    return PaymentService.customer_ledger(db, id)
+
+
+@router.get("/{id}/due-summary", response_model=CustomerDueSummaryResponse)
+def get_customer_due_summary(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(oauth2.get_current_user),
+):
+    return PaymentService.customer_summary(db, id)
 
 
 @router.post("/", response_model=CustomerDetailResponse, status_code=status.HTTP_201_CREATED)

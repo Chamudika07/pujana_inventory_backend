@@ -71,10 +71,22 @@ def print_bill_pdf( bill_id: str , db: Session = Depends(get_db) , current_user:
             pdf.showPage()
             y = height - 50
 
-    # 💰 Grand Total
+    # Financial summary
     pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(250, y - 20, "Grand Total:")
-    pdf.drawString(370, y - 20, f"{grand_total:.2f}")
+    pdf.drawString(220, y - 20, "Subtotal:")
+    pdf.drawString(370, y - 20, f"{bill.subtotal_amount:.2f}")
+    pdf.drawString(220, y - 40, "Discount:")
+    pdf.drawString(370, y - 40, f"{bill.discount_amount:.2f}")
+    pdf.drawString(220, y - 60, "Tax:")
+    pdf.drawString(370, y - 60, f"{bill.tax_amount:.2f}")
+    pdf.drawString(220, y - 80, "Grand Total:")
+    pdf.drawString(370, y - 80, f"{bill.total_amount:.2f}")
+    pdf.drawString(220, y - 100, "Paid:")
+    pdf.drawString(370, y - 100, f"{bill.paid_amount:.2f}")
+    pdf.drawString(220, y - 120, "Due:")
+    pdf.drawString(370, y - 120, f"{bill.due_amount:.2f}")
+    pdf.drawString(220, y - 140, "Status:")
+    pdf.drawString(370, y - 140, bill.payment_status.value.replace("_", " ").title())
 
     pdf.showPage()
     pdf.save()

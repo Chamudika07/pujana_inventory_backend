@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.models import user as models
 from app.database import engine
-from app.routers import user , category , item , bill , bill_print , alert, customer, supplier
+from app.routers import alert, bill, bill_print, category, customer, dashboard, item, payment, supplier, user
 from app.services.scheduler import start_scheduler, stop_scheduler
 import logging
 
@@ -57,6 +57,8 @@ app.include_router(bill_print.router)
 app.include_router(alert.router)
 app.include_router(customer.router)
 app.include_router(supplier.router)
+app.include_router(payment.router)
+app.include_router(dashboard.router)
 
     
 @app.get("/")

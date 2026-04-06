@@ -27,7 +27,6 @@ class SupplierBase(BaseModel):
     email: Optional[EmailStr] = None
     address: Optional[str] = None
     notes: Optional[str] = None
-    payable_balance: Decimal = Field(default=Decimal("0"), ge=Decimal("0"))
     is_active: bool = True
 
     @field_validator("supplier_name")
@@ -67,7 +66,6 @@ class SupplierUpdate(BaseModel):
     email: Optional[EmailStr] = None
     address: Optional[str] = None
     notes: Optional[str] = None
-    payable_balance: Optional[Decimal] = Field(default=None, ge=Decimal("0"))
     is_active: Optional[bool] = None
 
     @field_validator("supplier_name")
@@ -103,6 +101,7 @@ class SupplierSummary(BaseModel):
     number_of_purchase_bills: int
     total_purchased_amount: Decimal
     payable_balance: Decimal
+    total_paid: Decimal = Decimal("0")
 
 
 class SupplierListItem(BaseModel):

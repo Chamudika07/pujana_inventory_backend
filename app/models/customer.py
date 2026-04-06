@@ -29,3 +29,4 @@ class Customer(Base):
     updated_at = Column(TIMESTAMP, nullable=False, server_default=func.now(), onupdate=func.now())
 
     bills = relationship("Bill", back_populates="customer")
+    payments = relationship("Payment", back_populates="customer")

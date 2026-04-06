@@ -30,7 +30,6 @@ class CustomerBase(BaseModel):
     customer_type: str = "retail"
     notes: Optional[str] = None
     loyalty_points: int = Field(default=0, ge=0)
-    due_balance: Decimal = Field(default=Decimal("0"), ge=Decimal("0"))
     is_active: bool = True
 
     @field_validator("full_name")
@@ -78,7 +77,6 @@ class CustomerUpdate(BaseModel):
     customer_type: Optional[str] = None
     notes: Optional[str] = None
     loyalty_points: Optional[int] = Field(default=None, ge=0)
-    due_balance: Optional[Decimal] = Field(default=None, ge=Decimal("0"))
     is_active: Optional[bool] = None
 
     @field_validator("full_name")
@@ -124,6 +122,7 @@ class CustomerSummary(BaseModel):
     number_of_bills: int
     total_purchases: Decimal
     due_balance: Decimal
+    total_paid: Decimal = Decimal("0")
 
 
 class CustomerListItem(BaseModel):

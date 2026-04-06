@@ -7,7 +7,9 @@ from app import oauth2
 from app.database import get_db
 from app.models.user import User
 from app.schemas.supplier import SupplierCreate, SupplierDetailResponse, SupplierListItem, SupplierUpdate
+from app.schemas.payment import SupplierLedgerResponse, SupplierPayableSummaryResponse
 from app.services.supplier_service import SupplierService
+from app.services.payment_service import PaymentService
 
 
 router = APIRouter(
@@ -42,6 +44,24 @@ def get_supplier(
     current_user: User = Depends(oauth2.get_current_user),
 ):
     return SupplierService.get_supplier_detail(db, id)
+
+
+@router.get("/{id}/ledger", response_model=SupplierLedgerResponse)
+def get_supplier_ledger(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(oauth2.get_current_user),
+):
+    return PaymentService.supplier_ledger(db, id)
+
+
+@router.get("/{id}/payable-summary", response_model=SupplierPayableSummaryResponse)
+def get_supplier_payable_summary(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(oauth2.get_current_user),
+):
+    return PaymentService.supplier_summary(db, id)
 
 
 @router.post("/", response_model=SupplierDetailResponse, status_code=status.HTTP_201_CREATED)

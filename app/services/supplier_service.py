@@ -5,10 +5,10 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
-from app.models.bill import Bill
-from app.models.inventory import InventoryTransaction
+from app.models.bill import Bill, BillType
 from app.models.supplier import Supplier
 from app.schemas.supplier import SupplierCreate, SupplierDetailResponse, SupplierListItem, SupplierSummary, SupplierUpdate
+from app.services.financial_service import FinancialService
 
 
 class SupplierService:
@@ -41,13 +41,13 @@ class SupplierService:
             db.query(
                 Supplier.id.label("supplier_id"),
                 func.count(func.distinct(Bill.id)).label("number_of_purchase_bills"),
-                func.coalesce(func.sum(InventoryTransaction.quantity * InventoryTransaction.price), 0).label("total_purchased_amount"),
+                func.coalesce(func.sum(Bill.total_amount), 0).label("total_purchased_amount"),
+                func.coalesce(func.sum(Bill.paid_amount), 0).label("total_paid"),
                 Supplier.payable_balance.label("payable_balance"),
             )
             .outerjoin(Bill, Bill.supplier_id == Supplier.id)
-            .outerjoin(InventoryTransaction, InventoryTransaction.bill_id == Bill.id)
             .filter(Supplier.id.in_(supplier_ids))
-            .filter(or_(Bill.id.is_(None), Bill.bill_type == "buy"))
+            .filter(or_(Bill.id.is_(None), Bill.bill_type == BillType.buy))
             .group_by(Supplier.id)
             .all()
         )
@@ -58,6 +58,7 @@ class SupplierService:
                 number_of_purchase_bills=int(row.number_of_purchase_bills or 0),
                 total_purchased_amount=Decimal(row.total_purchased_amount or 0),
                 payable_balance=Decimal(row.payable_balance or 0),
+                total_paid=Decimal(row.total_paid or 0),
             )
         return summary_map
 
@@ -140,6 +141,7 @@ class SupplierService:
     @staticmethod
     def create_supplier(db: Session, payload: SupplierCreate) -> Supplier:
         supplier = Supplier(**payload.model_dump())
+        supplier.payable_balance = FinancialService.money(supplier.payable_balance)
         db.add(supplier)
         db.commit()
         db.refresh(supplier)
@@ -149,6 +151,7 @@ class SupplierService:
     def update_supplier(db: Session, supplier_id: int, payload: SupplierUpdate) -> Supplier:
         supplier = SupplierService.get_supplier(db, supplier_id)
         update_data = payload.model_dump(exclude_unset=True)
+        update_data.pop("payable_balance", None)
 
         for field, value in update_data.items():
             setattr(supplier, field, value)

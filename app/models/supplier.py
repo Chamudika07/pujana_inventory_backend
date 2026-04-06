@@ -21,3 +21,4 @@ class Supplier(Base):
     updated_at = Column(TIMESTAMP, nullable=False, server_default=func.now(), onupdate=func.now())
 
     bills = relationship("Bill", back_populates="supplier")
+    payments = relationship("Payment", back_populates="supplier")
