@@ -1,7 +1,9 @@
 """
 Service for generating unique model numbers and QR codes
 """
+import json
 import os
+import re
 import qrcode
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -15,6 +17,7 @@ class ModelNumberService:
     """Service to handle model number and QR code generation"""
     
     QR_CODE_DIR = "static/qrs"
+    MODEL_NUMBER_PATTERN = re.compile(r"^MDL-\d{4}-\d{5}$")
     
     @staticmethod
     def ensure_qr_directory():
@@ -84,6 +87,7 @@ class ModelNumberService:
         try:
             # Ensure directory exists
             ModelNumberService.ensure_qr_directory()
+            qr_payload = ModelNumberService.build_qr_payload(model_number)
             
             # Create QR code
             qr = qrcode.QRCode(
@@ -92,7 +96,7 @@ class ModelNumberService:
                 box_size=10,
                 border=4,
             )
-            qr.add_data(model_number)
+            qr.add_data(qr_payload)
             qr.make(fit=True)
             
             # Create image
@@ -111,6 +115,53 @@ class ModelNumberService:
         except Exception as e:
             logger.error(f"❌ Error generating QR code for {model_number}: {str(e)}")
             raise
+
+    @staticmethod
+    def build_qr_payload(model_number: str) -> str:
+        """Build a standardized QR payload for item scans."""
+        return json.dumps(
+            {"type": "item", "model_number": model_number},
+            separators=(",", ":"),
+        )
+
+    @staticmethod
+    def is_valid_model_number(model_number: str) -> bool:
+        """Validate model number format."""
+        return bool(ModelNumberService.MODEL_NUMBER_PATTERN.fullmatch(model_number.strip()))
+
+    @staticmethod
+    def resolve_scanned_value(scanned_value: str) -> tuple[str, str]:
+        """
+        Resolve a scanned QR or barcode value into a model number.
+
+        Supports legacy QR codes containing only the model number and
+        structured JSON payloads for future extensibility.
+        """
+        normalized_value = scanned_value.strip()
+        if not normalized_value:
+            raise ValueError("Scanned value cannot be empty")
+
+        if ModelNumberService.is_valid_model_number(normalized_value):
+            return normalized_value, "plain_model_number"
+
+        try:
+            payload = json.loads(normalized_value)
+        except json.JSONDecodeError as exc:
+            raise ValueError("Unsupported QR code format") from exc
+
+        if not isinstance(payload, dict):
+            raise ValueError("QR payload must be a JSON object")
+
+        qr_type = str(payload.get("type", "")).strip().lower()
+        model_number = str(payload.get("model_number", "")).strip()
+
+        if qr_type != "item":
+            raise ValueError("QR code is not an item code")
+
+        if not ModelNumberService.is_valid_model_number(model_number):
+            raise ValueError("QR code contains an invalid model number")
+
+        return model_number, "item_json"
     
     @staticmethod
     def delete_qr_code(qr_code_path: str) -> bool:

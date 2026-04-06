@@ -127,6 +127,47 @@ def get_item_by_model(
     return item_obj
 
 
+@router.post("/resolve-qr", response_model=item.QRResolveResponse)
+def resolve_item_qr(
+    payload: item.QRResolveRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(oauth2.get_current_user)
+):
+    """
+    Resolve a scanned QR or barcode value into an item.
+    Supports both legacy plain model-number codes and JSON item payloads.
+    """
+    try:
+        model_number, qr_format = ModelNumberService.resolve_scanned_value(payload.scanned_value)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc)
+        ) from exc
+
+    item_obj = db.query(item_model.Item).filter(
+        item_model.Item.model_number == model_number
+    ).first()
+
+    if not item_obj:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Item with model number {model_number} not found"
+        )
+
+    logger.info(
+        "✅ Resolved scanned code for user %s to item %s",
+        current_user.id,
+        item_obj.model_number,
+    )
+    return item.QRResolveResponse(
+        scanned_value=payload.scanned_value.strip(),
+        resolved_model_number=model_number,
+        qr_format=qr_format,
+        item=item_obj,
+    )
+
+
 # --Get item by ID-- #
 @router.get("/{id}", response_model=item.ItemOut)
 def get_item(
@@ -319,6 +360,5 @@ def get_qr_by_model(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving QR code: {str(e)}"
         )
-
 
 

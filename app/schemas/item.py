@@ -39,3 +39,14 @@ class ItemOut(ItemBase):
     
     class Config:
         from_attributes = True
+
+
+class QRResolveRequest(BaseModel):
+    scanned_value: str = Field(..., min_length=1)
+
+
+class QRResolveResponse(BaseModel):
+    scanned_value: str
+    resolved_model_number: str
+    qr_format: str
+    item: ItemOut
