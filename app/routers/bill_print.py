@@ -14,7 +14,7 @@ router = APIRouter(
 )
 
 
-
+# -- print bill as PDF -- #
 @router.get("/pdf/{bill_id}")
 def print_bill_pdf( bill_id: str , db: Session = Depends(get_db) , current_user: int = Depends(oauth2.get_current_user)):
     #filter database

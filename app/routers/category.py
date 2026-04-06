@@ -13,7 +13,7 @@ router = APIRouter(
 )
 
 
-# Create Category
+#--Create Category--#
 @router.post("/", response_model=category.CategoryOut)
 def create_category(category: category.CategoryCreate, db: Session = Depends(get_db),
                     current_user: int = Depends(oauth2.get_current_user)):
@@ -36,7 +36,8 @@ def create_category(category: category.CategoryCreate, db: Session = Depends(get
     return new_category
 
 
-# Get All Categories
+
+#--Get All Categories--#
 @router.get("/", response_model=List[category.CategoryOut])
 def get_categories(db: Session = Depends(get_db),
                    current_user: int = Depends(oauth2.get_current_user)):
@@ -47,7 +48,7 @@ def get_categories(db: Session = Depends(get_db),
 
 
 
-# Get Category by ID
+#--Get Category by ID--#
 @router.get("/{id}", response_model=category.CategoryOut)
 def get_category(id: int, db: Session = Depends(get_db),
                  current_user: int = Depends(oauth2.get_current_user)):
@@ -60,7 +61,7 @@ def get_category(id: int, db: Session = Depends(get_db),
     
     return category
 
-# Delete Category
+#--Delete Category--#
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_category(id: int, db: Session = Depends(get_db),
                     current_user: int = Depends(oauth2.get_current_user)):
@@ -78,7 +79,7 @@ def delete_category(id: int, db: Session = Depends(get_db),
     return None
 
 
-# Update Category
+#--Update Category--#
 @router.put("/{id}", response_model=category.CategoryOut)
 def update_category(id: int, updated_category: category.CategoryCreate, db: Session = Depends(get_db),
                     current_user: int = Depends(oauth2.get_current_user)):

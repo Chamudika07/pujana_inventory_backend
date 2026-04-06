@@ -22,7 +22,7 @@ router = APIRouter(
 )
 
 
-# Create Item with auto-generated model number and QR code
+# --Create Item with auto-generated model number and QR code --#
 @router.post("/", response_model=item.ItemOut)
 def create_item(
     item_data: item.ItemCreate,
@@ -92,7 +92,7 @@ def create_item(
         )
 
 
-# Get all items
+# --Get all items-- #
 @router.get("/", response_model=List[item.ItemOut])
 def get_items(
     db: Session = Depends(get_db),
@@ -103,7 +103,7 @@ def get_items(
     return items
 
 
-# Get item by ID
+# --Get item by ID-- #
 @router.get("/{id}", response_model=item.ItemOut)
 def get_item(
     id: int,
@@ -122,7 +122,7 @@ def get_item(
     return item_obj
 
 
-# Get item by model number
+# --Get item by model number-- #
 @router.get("/by-model/{model_number}", response_model=item.ItemOut)
 def get_item_by_model(
     model_number: str,
@@ -147,7 +147,7 @@ def get_item_by_model(
     return item_obj
 
 
-# Update item
+# --Update item-- #
 @router.put("/{id}", response_model=item.ItemOut)
 def update_item(
     id: int,
@@ -203,7 +203,7 @@ def update_item(
     return updated_item_obj
 
 
-# Delete item
+# --Delete item-- #
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_item(
     id: int,
@@ -234,7 +234,7 @@ def delete_item(
     return None
 
 
-# Get QR code for an item
+# --Get QR code for an item-- #
 @router.get("/{id}/qr-code")
 def get_item_qr_code(
     id: int,
@@ -278,7 +278,7 @@ def get_item_qr_code(
         )
 
 
-# Get QR code by model number
+# --Get QR code by model number-- #
 @router.get("/qr/{model_number}")
 def get_qr_by_model(
     model_number: str,

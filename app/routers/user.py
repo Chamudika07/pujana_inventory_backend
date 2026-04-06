@@ -12,7 +12,7 @@ router = APIRouter(
     tags=['Users']
 )
 
-# Create User
+#--Create User--#
 @router.post("/", response_model=user.UserOut)
 def create_user(user: user.UserCreate, db: Session = Depends(get_db)):
     # check if user email already exists
@@ -33,7 +33,7 @@ def create_user(user: user.UserCreate, db: Session = Depends(get_db)):
 
     return new_user
 
-#login user
+#--login user--#
 @router.post("/login", response_model=token.Token)
 def login_user(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     

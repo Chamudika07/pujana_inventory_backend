@@ -13,6 +13,16 @@ class BillBase(BaseModel):
     bill_type : BillType
     created_at : datetime
     
+class SellRequest(BaseModel):
+    item_id: int
+    quantity: int
+    price: float
+
+class BuyRequest(BaseModel):
+    item_id: int
+    quantity: int
+    price: float
+    
 class BillItemAction(BaseModel):
     bill_id : str
     model_number : str
