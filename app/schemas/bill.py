@@ -1,8 +1,9 @@
 from pydantic import BaseModel, Field 
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal , List
+from typing import Literal , List, Optional
 import enum
+from app.schemas.customer import CustomerBasic
 
 class BillType(str , enum.Enum):
     buy = "buy"
@@ -12,6 +13,7 @@ class BillBase(BaseModel):
     bill_code : str
     bill_type : BillType
     created_at : datetime
+    customer_id: Optional[int] = None
     
 class BillCreateItem(BaseModel):
     model_number: str
@@ -21,6 +23,7 @@ class BillCreateItem(BaseModel):
 class BillCreateRequest(BaseModel):
     bill_type: Literal["buy", "sell"]
     items: List[BillCreateItem]
+    customer_id: Optional[int] = None
     
 class BillItemOut(BaseModel):
     bill_id : str
@@ -34,6 +37,7 @@ class BillItemOut(BaseModel):
 class BillOut(BillBase):
     id : int
     bill_id : str
+    customer: Optional[CustomerBasic] = None
 
     class Config:
         from_attributes = True

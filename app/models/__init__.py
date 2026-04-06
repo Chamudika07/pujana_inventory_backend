@@ -7,5 +7,5 @@ from app.models.item import Item
 from app.models.inventory import InventoryTransaction
 from app.models.bill import Bill 
 from app.models.low_stock_alert import LowStockAlert
-
+from app.models.customer import Customer
 

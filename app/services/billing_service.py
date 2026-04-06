@@ -6,10 +6,12 @@ from sqlalchemy.orm import Session
 
 from app.function.automatic_bill_id_generation import generate_bill_id
 from app.models.bill import Bill
+from app.models.customer import Customer
 from app.models.inventory import InventoryTransaction
 from app.models.item import Item
 from app.models.user import User
 from app.services.alert_service import AlertService
+from app.services.customer_service import CustomerService
 
 
 class BillingService:
@@ -20,6 +22,7 @@ class BillingService:
         user: User,
         bill_type: str,
         items: Iterable,
+        customer_id: int | None = None,
     ) -> Bill:
         if bill_type not in {"buy", "sell"}:
             raise HTTPException(
@@ -34,7 +37,20 @@ class BillingService:
                 detail="At least one bill item is required",
             )
 
-        bill = Bill(bill_code=generate_bill_id(bill_type), bill_type=bill_type)
+        customer: Customer | None = None
+        if customer_id is not None:
+            if bill_type != "sell":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="customer_id can only be used with sell bills",
+                )
+            customer = CustomerService.ensure_active_customer(CustomerService.get_customer(db, customer_id))
+
+        bill = Bill(
+            bill_code=generate_bill_id(bill_type),
+            bill_type=bill_type,
+            customer_id=customer.id if customer else None,
+        )
         db.add(bill)
         db.flush()
 
